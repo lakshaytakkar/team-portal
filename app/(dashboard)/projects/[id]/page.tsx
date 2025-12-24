@@ -21,7 +21,7 @@ import {
   ChevronDown,
 } from "lucide-react"
 import { Project } from "@/lib/types/project"
-import { Task, TaskStatus, TaskPriority } from "@/lib/types/task"
+import { Task, TaskStatus, TaskPriority, TaskResource } from "@/lib/types/task"
 import { initialProjects } from "@/lib/data/projects"
 import { initialTasks } from "@/lib/data/tasks"
 import { cn } from "@/lib/utils"
@@ -350,7 +350,7 @@ function TaskCard({ task }: { task: Task }) {
   const commentsCount = task.commentsCount ?? 14
   
   // Get assignees - use task resource and any subtask resources
-  const assignees = []
+  const assignees: TaskResource[] = []
   if (task.resource) {
     assignees.push(task.resource)
   }
@@ -833,7 +833,7 @@ export default function ProjectDetailsPage() {
                             const dueDate = task.dueDate || task.updatedAt
                             
                             // Get assignees
-                            const assignees = []
+                            const assignees: TaskResource[] = []
                             if (task.resource) {
                               assignees.push(task.resource)
                             }

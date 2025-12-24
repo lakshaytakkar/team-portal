@@ -51,93 +51,82 @@
   /* Radius - matching design system (8px base) */
   --radius: 0.5rem;
   
-  /* Base colors from Figma Greyscale */
-  --background: #F8FAFB;
-  --foreground: #0D0D12;
+  /* Base colors - Light Theme (Refined) */
+  --background: #F9FAFB;
+  --foreground: #08090A;
   
   /* Card colors */
   --card: #FFFFFF;
-  --card-foreground: #0D0D12;
+  --card-foreground: #08090A;
   
   /* Popover colors */
   --popover: #FFFFFF;
-  --popover-foreground: #0D0D12;
+  --popover-foreground: #08090A;
   
-  /* Primary colors from Figma Primary/500 */
-  --primary: #897EFA;
+  /* Primary colors (Shared) */
+  --primary: #5E6AD2;
   --primary-foreground: #FFFFFF;
   
   /* Secondary colors */
-  --secondary: #F6F8FA;
-  --secondary-foreground: #0D0D12;
+  --secondary: #F1F5F9;
+  --secondary-foreground: #08090A;
   
-  /* Muted colors from Greyscale */
-  --muted: #DFE1E7;
-  --muted-foreground: #666D80;
+  /* Muted colors */
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B;
   
   /* Accent colors */
-  --accent: #F3F2FF;
-  --accent-foreground: #0D0D12;
+  --accent: #F1F5F9;
+  --accent-foreground: #08090A;
   
-  /* Destructive colors from Alert/Error */
+  /* Destructive colors */
   --destructive: #EF4444;
   --destructive-foreground: #FFFFFF;
   
-  /* Border and input from Greyscale */
-  --border: #C1C7D0;
-  --input: #C1C7D0;
-  --ring: #897EFA;
-  
-  /* Chart colors - using alert colors */
-  --chart-1: #3B82F6; /* Sky */
-  --chart-2: #10B981; /* Success */
-  --chart-3: #F59E0B; /* Warning */
-  --chart-4: #EF4444; /* Error */
-  --chart-5: #897EFA; /* Primary */
+  /* Border and input */
+  --border: #E2E8F0;
+  --input: #E2E8F0;
+  --ring: #5E6AD2;
   
   /* Sidebar colors */
   --sidebar: #FFFFFF;
-  --sidebar-foreground: #0D0D12;
-  --sidebar-primary: #897EFA;
+  --sidebar-foreground: #08090A;
+  --sidebar-primary: #5E6AD2;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #F3F2FF;
-  --sidebar-accent-foreground: #0D0D12;
-  --sidebar-border: #DFE1E7;
-  --sidebar-ring: #897EFA;
+  --sidebar-accent: #F1F5F9;
+  --sidebar-accent-foreground: #08090A;
+  --sidebar-border: #E2E8F0;
+  --sidebar-ring: #5E6AD2;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: #08090A;
+  --foreground: #F7F8F8;
+  --card: #0C0D0E;
+  --card-foreground: #F7F8F8;
+  --popover: #0C0D0E;
+  --popover-foreground: #F7F8F8;
+  --primary: #5E6AD2;
+  --primary-foreground: #FFFFFF;
+  --secondary: #161718;
+  --secondary-foreground: #F7F8F8;
+  --muted: #161718;
+  --muted-foreground: #A1A7C1;
+  --accent: #161718;
+  --accent-foreground: #F7F8F8;
+  --destructive: #EF4444;
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.1);
+  --ring: #5E6AD2;
+  
+  --sidebar: #08090A;
+  --sidebar-foreground: #F7F8F8;
+  --sidebar-primary: #5E6AD2;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #161718;
+  --sidebar-accent-foreground: #F7F8F8;
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --sidebar-ring: #5E6AD2;
 }
 
 @layer base {
@@ -145,10 +134,27 @@
     @apply border-border outline-ring/50;
     /* Modern Slim Scrollbar - Firefox */
     scrollbar-width: thin;
-    scrollbar-color: rgba(137, 126, 250, 0.3) transparent;
+    scrollbar-color: rgba(94, 106, 210, 0.3) transparent;
   }
   body {
     @apply bg-background text-foreground;
+    font-size: 17px;
+    line-height: 1.6;
+    letter-spacing: -0.01em;
+  }
+
+  h1 {
+    font-size: 64px;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+  }
+
+  h2 {
+    font-size: 56px;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1.2;
   }
 
   /* Cursor baseline: interactive elements should feel clickable */

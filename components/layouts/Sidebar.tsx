@@ -20,6 +20,7 @@ import {
 } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
+import { ModeToggle } from "@/components/ModeToggle"
 
 interface MenuItem {
   label: string

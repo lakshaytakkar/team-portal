@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Search, Bell } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
+import { ModeToggle } from "@/components/ModeToggle"
 
 interface BreadcrumbItem {
   label: string
@@ -38,6 +39,16 @@ export function Topbar({ breadcrumbs = [{ label: "Home" }, { label: "Dashboard" 
 
       {/* Actions */}
       <div className="flex gap-2.5 items-center">
+        {/* Mode Toggle */}
+        <ModeToggle />
+
+        {/* Divider */}
+        <div className="flex h-5 items-center justify-center w-0">
+          <div className="flex-none rotate-90">
+            <Separator className="h-px w-5 bg-[#dfe1e7]" />
+          </div>
+        </div>
+
         {/* Search */}
         <button className="bg-white border border-[#dfe1e7] rounded-full shrink-0 size-8 flex items-center justify-center hover:bg-[#f6f8fa] transition-colors">
           <Search className="h-4 w-4 text-[#666d80]" />
