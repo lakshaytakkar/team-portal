@@ -1,225 +1,209 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState } from "react"
+import Link from "next/link"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ChevronRight, ChevronDown, ExternalLink, User } from "lucide-react"
-import { Task, TaskLevel0, TaskLevel1, TaskLevel2 } from "@/lib/types/task"
-import { initialTasks } from "@/lib/data/tasks"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import {
+  Plus,
+  Search,
+  Filter,
+  MoreVertical,
+  Folder,
+  CheckCircle2,
+} from "lucide-react"
+import { Project, ProjectStatus } from "@/lib/types/project"
+import { initialProjects } from "@/lib/data/projects"
 import { cn } from "@/lib/utils"
+import { getAvatarForUser } from "@/lib/utils/avatars"
 
-// Status badge variants
-const statusConfig = {
-  "not-started": { label: "Not Started", variant: "neutral-outline" as const },
-  "in-progress": { label: "In Progress", variant: "primary-outline" as const },
-  "in-review": { label: "In Review", variant: "yellow-outline" as const },
-  "completed": { label: "Completed", variant: "green-outline" as const },
-  "blocked": { label: "Blocked", variant: "red-outline" as const },
+// Map project status to Kanban column
+const statusToColumn: Record<ProjectStatus, "not-started" | "in-progress" | "completed" | "on-hold"> = {
+  planning: "not-started",
+  active: "in-progress",
+  completed: "completed",
+  "on-hold": "on-hold",
+  cancelled: "on-hold",
 }
 
-// Priority badge variants
-const priorityConfig = {
-  low: { label: "Low", variant: "neutral" as const },
-  medium: { label: "Medium", variant: "secondary" as const },
-  high: { label: "High", variant: "yellow" as const },
-  urgent: { label: "Urgent", variant: "red" as const },
+// Status badge config for Kanban cards
+const statusBadgeConfig: Record<ProjectStatus, { label: string; variant: "not-started" | "in-progress" | "completed" | "on-hold" }> = {
+  planning: { label: "Not Started", variant: "not-started" },
+  active: { label: "In Progress", variant: "in-progress" },
+  "on-hold": { label: "On Hold", variant: "on-hold" },
+  completed: { label: "Completed", variant: "completed" },
+  cancelled: { label: "On Hold", variant: "on-hold" },
 }
 
-interface ExpandedRows {
-  [key: string]: boolean
-}
+// Column configuration
+const columns = [
+  {
+    id: "not-started" as const,
+    title: "Not Started",
+    dotColor: "bg-[#666D80]",
+    projects: [] as Project[],
+  },
+  {
+    id: "in-progress" as const,
+    title: "In Progress",
+    dotColor: "bg-[#33CFFF]",
+    projects: [] as Project[],
+  },
+  {
+    id: "completed" as const,
+    title: "Completed",
+    dotColor: "bg-[#40C4AA]",
+    projects: [] as Project[],
+  },
+  {
+    id: "on-hold" as const,
+    title: "On Hold",
+    dotColor: "bg-[#FFBD4C]",
+    projects: [] as Project[],
+  },
+]
 
-async function fetchTasks() {
+async function fetchProjects() {
   // Simulate API delay
   await new Promise((resolve) => setTimeout(resolve, 500))
-  return initialTasks.tasks
+  return initialProjects.projects
 }
 
-interface TaskRowProps {
-  task: Task
-  level: number
-  expandedRows: ExpandedRows
-  onToggleExpand: (taskId: string) => void
-  isLast?: boolean
-}
-
-function TaskRow({ task, level, expandedRows, onToggleExpand, isLast }: TaskRowProps) {
-  const hasSubtasks =
-    (task.level === 0 && (task as TaskLevel0).subtasks && (task as TaskLevel0).subtasks!.length > 0) ||
-    (task.level === 1 && (task as TaskLevel1).subtasks && (task as TaskLevel1).subtasks!.length > 0)
-
-  const isExpanded = expandedRows[task.id] ?? (level === 0 ? true : false)
-  const indentClass = level === 0 ? "" : level === 1 ? "pl-8" : "pl-16"
-
-  const status = statusConfig[task.status]
-  const priority = priorityConfig[task.priority]
+// Project Card Component
+function ProjectCard({ project }: { project: Project }) {
+  const status = statusBadgeConfig[project.status]
+  const remainingTasks = project.tasksCount ? project.tasksCount - (project.completedTasksCount || 0) : 0
+  
+  // Generate description text based on status
+  const getDescription = () => {
+    if (project.status === "completed") {
+      if (project.tasksCount && project.completedTasksCount === project.tasksCount) {
+        return "All tasks finished"
+      }
+      return "All tasks completed"
+    }
+    if (project.status === "planning") {
+      return `${project.tasksCount || 15} tasks to be assigned`
+    }
+    if (project.status === "active") {
+      // For active projects, show various descriptions
+      if (project.name.toLowerCase().includes("feedback")) {
+        return "7 tasks due this week"
+      }
+      if (project.name.toLowerCase().includes("brand")) {
+        return "4 logo concepts pending"
+      }
+      if (project.name.toLowerCase().includes("onboarding")) {
+        return "2 designs need review"
+      }
+      if (remainingTasks > 0) {
+        return `${remainingTasks} tasks due this week`
+      }
+      return "In progress"
+    }
+    if (project.status === "on-hold") {
+      if (project.name.toLowerCase().includes("marketing")) {
+        return "Awaiting budget approval"
+      }
+      if (project.name.toLowerCase().includes("database")) {
+        return "1 blocker from engineering"
+      }
+      return `${remainingTasks} tasks blocked`
+    }
+    return ""
+  }
 
   return (
-    <>
-      <TableRow
-        className={cn(
-          indentClass,
-          "hover:bg-muted/30 transition-colors",
-          level === 0 && "bg-muted/20 font-semibold",
-          level === 1 && "bg-muted/10",
-          level === 2 && "text-sm"
-        )}
-      >
-        <TableCell className="w-12">
-          {hasSubtasks ? (
-            <button
-              onClick={() => onToggleExpand(task.id)}
-              className="p-1 hover:bg-muted rounded transition-colors"
-            >
-              {isExpanded ? (
-                <ChevronDown className="h-4 w-4" />
-              ) : (
-                <ChevronRight className="h-4 w-4" />
-              )}
-            </button>
-          ) : (
-            <div className="w-6" />
-          )}
-        </TableCell>
-        <TableCell className="font-medium max-w-md">
-          <div className="flex items-center gap-2">
-            {task.name}
-            {task.figmaLink && (
-              <a
-                href={task.figmaLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:text-primary/80"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <ExternalLink className="h-3.5 w-3.5" />
-              </a>
-            )}
+    <Link href={`/projects/${project.id}`}>
+      <Card className="border border-[#DFE1E7] rounded-2xl p-4 bg-white hover:border-[#897EFA] transition-colors cursor-pointer">
+        <div className="flex items-start justify-between mb-2">
+          <div className="bg-[#897EFA] rounded-lg w-8 h-8 flex items-center justify-center">
+            <Folder className="h-5 w-5 text-white" />
           </div>
-          {task.description && (
-            <div className="text-muted-foreground text-xs mt-1 font-normal">
-              {task.description}
-            </div>
-          )}
-        </TableCell>
-        <TableCell>
-          <Badge variant={status.variant} size="sm">
-            {status.label}
-          </Badge>
-        </TableCell>
-        <TableCell>
-          <Badge variant={priority.variant} size="sm">
-            {priority.label}
-          </Badge>
-        </TableCell>
-        <TableCell>
-          {task.resource ? (
-            <div className="flex items-center gap-2">
-              <Avatar className="h-6 w-6">
-                <AvatarImage src={task.resource.avatar} alt={task.resource.name} />
-                <AvatarFallback className="text-xs">
-                  {task.resource.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")
-                    .toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col">
-                <span className="text-sm font-medium">{task.resource.name}</span>
-                {task.resource.email && (
-                  <span className="text-xs text-muted-foreground">{task.resource.email}</span>
-                )}
-              </div>
-            </div>
-          ) : (
-            <span className="text-muted-foreground text-sm flex items-center gap-1">
-              <User className="h-3.5 w-3.5" />
-              Unassigned
-            </span>
-          )}
-        </TableCell>
-        <TableCell className="text-muted-foreground text-sm">
-          {new Date(task.updatedAt).toLocaleDateString()}
-        </TableCell>
-      </TableRow>
-      {hasSubtasks && isExpanded && (
-        <>
-          {task.level === 0 &&
-            (task as TaskLevel0).subtasks?.map((subtask, index) => (
-              <TaskRow
-                key={subtask.id}
-                task={subtask}
-                level={1}
-                expandedRows={expandedRows}
-                onToggleExpand={onToggleExpand}
-                isLast={index === (task as TaskLevel0).subtasks!.length - 1}
-              />
-            ))}
-          {task.level === 1 &&
-            (task as TaskLevel1).subtasks?.map((subtask, index) => (
-              <TaskRow
-                key={subtask.id}
-                task={subtask}
-                level={2}
-                expandedRows={expandedRows}
-                onToggleExpand={onToggleExpand}
-                isLast={index === (task as TaskLevel1).subtasks!.length - 1}
-              />
-            ))}
-        </>
-      )}
-    </>
+          <div className="flex items-center gap-2">
+            <Badge variant={status.variant} className="h-6 px-2.5 py-0.5 rounded-2xl text-sm font-medium leading-5">
+              {status.label}
+            </Badge>
+            <button 
+              className="w-4 h-4 flex items-center justify-center"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+              }}
+            >
+              <MoreVertical className="h-4 w-4 text-[#666D80]" />
+            </button>
+          </div>
+        </div>
+        
+        <div className="flex flex-col gap-1.5 mb-2">
+          <h3 className="font-semibold text-base text-[#0D0D12] leading-6 tracking-[0.32px]">
+            {project.name}
+          </h3>
+          <p className="text-xs text-[#666D80] font-medium leading-4 tracking-[0.24px]">
+            {getDescription()}
+          </p>
+        </div>
+      
+      <div className="flex items-end justify-between mt-2">
+        <div className="flex items-center gap-2">
+          <div className="relative w-[100px] h-2 bg-[#DFE1E7] rounded-full overflow-hidden">
+            <div
+              className={cn(
+                "h-full rounded-full transition-all",
+                project.progress === 100
+                  ? "bg-[#40C4AA] rounded-[10px]"
+                  : "bg-[#40C4AA] rounded-l-full"
+              )}
+              style={{ width: `${project.progress}%` }}
+            />
+          </div>
+          <span className="text-xs text-[#666D80] font-medium leading-4 tracking-[0.24px]">
+            {project.progress}%
+          </span>
+        </div>
+        
+        <div className="flex items-center pl-0 pr-2">
+          {project.team.slice(0, 3).map((member, index) => (
+            <Avatar
+              key={member.id}
+              className={cn(
+                "h-6 w-6 border-2 border-white rounded-full",
+                index > 0 && "-ml-2"
+              )}
+            >
+              <AvatarImage src={getAvatarForUser(member.id || member.name)} alt={member.name} />
+              <AvatarFallback className="text-xs bg-muted">
+                {member.name
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")
+                  .toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+          ))}
+        </div>
+      </div>
+      </Card>
+    </Link>
   )
 }
 
 export default function ProjectsPage() {
-  const { data: tasks, isLoading, error } = useQuery({
-    queryKey: ["project-tasks"],
-    queryFn: fetchTasks,
+  const [searchQuery, setSearchQuery] = useState("")
+  const { data: projects, isLoading, error } = useQuery({
+    queryKey: ["projects"],
+    queryFn: fetchProjects,
   })
-
-  const [expandedRows, setExpandedRows] = useState<ExpandedRows>(() => {
-    // Expand all level 0 tasks by default - initialize empty, will be set when tasks load
-    return {}
-  })
-
-  // Expand all level 0 tasks by default when tasks are loaded
-  useEffect(() => {
-    if (tasks) {
-      setExpandedRows((prev) => {
-        const newExpanded: ExpandedRows = { ...prev }
-        tasks.forEach((task) => {
-          if (!(task.id in newExpanded)) {
-            newExpanded[task.id] = true
-          }
-        })
-        return newExpanded
-      })
-    }
-  }, [tasks])
-
-  const onToggleExpand = (taskId: string) => {
-    setExpandedRows((prev) => ({
-      ...prev,
-      [taskId]: !prev[taskId],
-    }))
-  }
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-muted-foreground">Loading tasks...</div>
+        <div className="text-muted-foreground">Loading projects...</div>
       </div>
     )
   }
@@ -227,110 +211,169 @@ export default function ProjectsPage() {
   if (error) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-destructive">Error loading tasks. Please try again.</div>
+        <div className="text-destructive">Error loading projects. Please try again.</div>
       </div>
     )
   }
 
-  const completedCount = tasks?.reduce((acc, task) => {
-    const countCompleted = (t: Task): number => {
-      let total = t.status === "completed" ? 1 : 0
-      if (t.level === 0 && (t as TaskLevel0).subtasks) {
-        total += (t as TaskLevel0).subtasks!.reduce((sum, st) => sum + countCompleted(st), 0)
-      } else if (t.level === 1 && (t as TaskLevel1).subtasks) {
-        total += (t as TaskLevel1).subtasks!.reduce((sum, st) => sum + countCompleted(st), 0)
-      }
-      return total
-    }
-    return acc + countCompleted(task)
-  }, 0) || 0
+  // Filter projects by search query
+  const filteredProjects = projects?.filter((project) =>
+    project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    project.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || []
 
-  const totalCount = tasks?.reduce((acc, task) => {
-    const countTotal = (t: Task): number => {
-      let total = 1
-      if (t.level === 0 && (t as TaskLevel0).subtasks) {
-        total += (t as TaskLevel0).subtasks!.reduce((sum, st) => sum + countTotal(st), 0)
-      } else if (t.level === 1 && (t as TaskLevel1).subtasks) {
-        total += (t as TaskLevel1).subtasks!.reduce((sum, st) => sum + countTotal(st), 0)
-      }
-      return total
-    }
-    return acc + countTotal(task)
-  }, 0) || 0
+  // Organize projects into columns
+  const columnsWithProjects = columns.map((column) => ({
+    ...column,
+    projects: filteredProjects.filter((project) => statusToColumn[project.status] === column.id),
+  }))
+
+  // Calculate statistics
+  const totalProjects = projects?.length || 0
+  const totalTasks = projects?.reduce((sum, p) => sum + (p.tasksCount || 0), 0) || 0
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const totalDueToday = projects?.filter((p) => {
+    if (!p.dueDate) return false
+    const dueDate = new Date(p.dueDate)
+    dueDate.setHours(0, 0, 0, 0)
+    return dueDate.getTime() === today.getTime()
+  }).length || 0
+  const taskCompleted = projects?.reduce((sum, p) => sum + (p.completedTasksCount || 0), 0) || 0
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Project Tasks</h1>
-        <p className="text-muted-foreground mt-1">
-          Track and manage all project tasks from design to completion
-        </p>
+    <div className="space-y-5">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-semibold text-[#0D0D12] leading-[1.35]">
+          Projects Overview
+        </h1>
+        <Button className="h-10 px-4 py-2 bg-[#897EFA] border border-[#897EFA] text-white rounded-lg hover:bg-[#897EFA]/90">
+          <Plus className="h-4 w-4 mr-2" />
+          New Project
+        </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalCount}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Completed</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{completedCount}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">In Progress</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
-              {tasks?.filter((t) => t.status === "in-progress").length || 0}
+      {/* Stats Cards */}
+      <div className="grid grid-cols-4 gap-6">
+        <Card className="border border-[#DFE1E7] rounded-2xl p-[18px] bg-white">
+          <p className="text-sm text-[#666D80] font-medium leading-5 tracking-[0.28px] mb-0.5">
+            Total Project
+          </p>
+          <div className="flex items-center justify-between mt-0.5">
+            <p className="text-xl font-semibold text-[#0D0D12] leading-[1.35]">
+              {totalProjects}
+            </p>
+            <div className="bg-[#F3F2FF] rounded-lg w-9 h-9 flex items-center justify-center">
+              <CheckCircle2 className="h-5 w-5 text-[#897EFA]" />
             </div>
-          </CardContent>
+          </div>
+        </Card>
+
+        <Card className="border border-[#DFE1E7] rounded-2xl p-[18px] bg-white">
+          <p className="text-sm text-[#666D80] font-medium leading-5 tracking-[0.28px] mb-0.5">
+            Total Task
+          </p>
+          <div className="flex items-center justify-between mt-0.5">
+            <p className="text-xl font-semibold text-[#0D0D12] leading-[1.35]">
+              {totalTasks}
+            </p>
+            <div className="bg-[#F3F2FF] rounded-lg w-9 h-9 flex items-center justify-center">
+              <CheckCircle2 className="h-5 w-5 text-[#897EFA]" />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="border border-[#DFE1E7] rounded-2xl p-[18px] bg-white">
+          <p className="text-sm text-[#666D80] font-medium leading-5 tracking-[0.28px] mb-0.5">
+            Total Due Today
+          </p>
+          <div className="flex items-center justify-between mt-0.5">
+            <p className="text-xl font-semibold text-[#0D0D12] leading-[1.35]">
+              {totalDueToday}
+            </p>
+            <div className="bg-[#F3F2FF] rounded-lg w-9 h-9 flex items-center justify-center">
+              <CheckCircle2 className="h-5 w-5 text-[#897EFA]" />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="border border-[#DFE1E7] rounded-2xl p-[18px] bg-white">
+          <p className="text-sm text-[#666D80] font-medium leading-5 tracking-[0.28px] mb-0.5">
+            Task Completed
+          </p>
+          <div className="flex items-center justify-between mt-0.5">
+            <p className="text-xl font-semibold text-[#0D0D12] leading-[1.35]">
+              {taskCompleted}
+            </p>
+            <div className="bg-[#F3F2FF] rounded-lg w-9 h-9 flex items-center justify-center">
+              <CheckCircle2 className="h-5 w-5 text-[#897EFA]" />
+            </div>
+          </div>
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Tasks Overview</CardTitle>
-          <CardDescription>
-            Expand or collapse task groups to view subtasks. Click the Figma icon to view designs.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12"></TableHead>
-                <TableHead>Task Name</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Priority</TableHead>
-                <TableHead>Assigned To</TableHead>
-                <TableHead>Last Updated</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {tasks?.map((task, index) => (
-                <TaskRow
-                  key={task.id}
-                  task={task}
-                  level={0}
-                  expandedRows={expandedRows}
-                  onToggleExpand={onToggleExpand}
-                  isLast={index === tasks.length - 1}
-                />
-              ))}
-            </TableBody>
-          </Table>
+      {/* Projects List */}
+      <Card className="border border-[#DFE1E7] rounded-2xl">
+        <div className="border-b border-[#DFE1E7] h-16 flex items-center justify-between px-5">
+          <h2 className="text-base font-semibold text-[#0D0D12] leading-6 tracking-[0.32px]">
+            Projects List
+          </h2>
+          <div className="flex items-center gap-3">
+            <div className="relative w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#666D80]" />
+              <Input
+                type="search"
+                placeholder="Search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 h-[38px] border border-[#DFE1E7] rounded-[10px] text-sm font-medium text-[#666D80]"
+              />
+            </div>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-[38px] w-[38px] border border-[#DFE1E7] rounded-[10px]"
+            >
+              <Filter className="h-4 w-4 text-[#666D80]" />
+            </Button>
+          </div>
+        </div>
+
+        <CardContent className="p-5">
+          {/* Kanban Board */}
+          <div className="flex gap-5">
+            {columnsWithProjects.map((column) => (
+              <div key={column.id} className="flex-1 flex flex-col gap-3">
+                {/* Column Header */}
+                <div className="bg-[#F6F8FA] h-10 rounded-lg px-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2 flex-1">
+                    <div className={cn("w-2.5 h-2.5 rounded-full", column.dotColor)} />
+                    <span className="text-base font-semibold text-[#0D0D12] leading-6 tracking-[0.32px]">
+                      {column.title}
+                    </span>
+                    <div className="bg-white border border-[#DFE1E7] rounded-md w-5 h-5 flex items-center justify-center">
+                      <span className="text-xs font-semibold text-[#0D0D12] leading-4 tracking-[0.24px]">
+                        {column.projects.length}
+                      </span>
+                    </div>
+                  </div>
+                  <button className="w-5 h-5 flex items-center justify-center">
+                    <MoreVertical className="h-4 w-4 text-[#666D80]" />
+                  </button>
+                </div>
+
+                {/* Project Cards */}
+                <div className="flex flex-col gap-3">
+                  {column.projects.map((project) => (
+                    <ProjectCard key={project.id} project={project} />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
     </div>
   )
 }
-

@@ -73,3 +73,4 @@ if (missingRegistry.length > 0) {
   console.log("✅ All registry icons are present!")
 }
 
+

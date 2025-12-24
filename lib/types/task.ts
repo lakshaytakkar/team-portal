@@ -16,6 +16,9 @@ export interface BaseTask {
   priority: TaskPriority
   resource?: TaskResource
   figmaLink?: string
+  dueDate?: string
+  commentsCount?: number
+  progress?: number
   createdAt: string
   updatedAt: string
 }

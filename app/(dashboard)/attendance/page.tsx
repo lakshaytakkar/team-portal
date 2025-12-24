@@ -16,6 +16,7 @@ import { Search, Filter, ArrowUpDown, ChevronLeft, ChevronRight, MoreVertical } 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { getAvatarForUser } from "@/lib/utils/avatars"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -196,7 +197,7 @@ const columns: ColumnDef<AttendanceRecord>[] = [
     cell: ({ row }) => (
       <div className="flex items-center gap-2.5">
         <Avatar className="h-8 w-8">
-          <AvatarImage src={row.original.employeeAvatar} />
+          <AvatarImage src={getAvatarForUser(row.original.employeeName || row.original.employeeId || "user")} />
           <AvatarFallback className="bg-[#dad7fd] text-[#897efa]">
             {row.original.employeeName
               .split(" ")

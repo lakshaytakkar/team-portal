@@ -55,3 +55,4 @@ if (missingInTarget.length > 0) {
   console.log(`\n✅ All registry icons are in target directory!`)
 }
 
+

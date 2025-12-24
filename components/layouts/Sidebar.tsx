@@ -16,6 +16,7 @@ import {
   Headphones,
   LogOut,
   ChevronLeft,
+  CheckSquare,
 } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
@@ -30,8 +31,10 @@ interface MenuItem {
 const menuItems: MenuItem[] = [
   // Main Menu
   { label: "Dashboard", href: "/", icon: Home, section: "main" },
-  { label: "Projects", href: "/projects", icon: Briefcase, section: "main" },
   { label: "Calendar", href: "/calendar", icon: Calendar, section: "main" },
+  // My Workspace
+  { label: "My Projects", href: "/projects", icon: Briefcase, section: "workspace" },
+  { label: "My Tasks", href: "/tasks", icon: CheckSquare, section: "workspace" },
   // Management
   { label: "Employee", href: "/employee", icon: Users, section: "management" },
   { label: "Attendance", href: "/attendance", icon: Clock, section: "management" },
@@ -87,6 +90,43 @@ export function Sidebar() {
           <div className="flex flex-col items-start w-full">
             {menuItems
               .filter((item) => item.section === "main")
+              .map((item) => {
+                const active = isActive(item.href)
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "relative flex gap-2 h-10 items-center px-3 py-2 rounded-lg w-[240px] transition-colors",
+                      active
+                        ? "bg-[#f6f8fa] text-[#0d0d12]"
+                        : "bg-white text-[#666d80] hover:bg-[#f6f8fa]"
+                    )}
+                  >
+                    <item.icon
+                      className={cn(
+                        "shrink-0 size-4",
+                        active && item.href === "/attendance" ? "text-[#897efa]" : active ? "text-[#0d0d12]" : "text-[#666d80]"
+                      )}
+                    />
+                    <p className="flex-1 font-medium text-base tracking-[0.32px]">{item.label}</p>
+                    {active && item.href === "/attendance" && (
+                      <div className="absolute bg-[#897efa] h-6 left-[-16px] rounded-br-lg rounded-tr-lg top-1/2 -translate-y-1/2 w-1" />
+                    )}
+                  </Link>
+                )
+              })}
+          </div>
+        </div>
+
+        {/* My Workspace Menu */}
+        <div className="flex flex-col gap-1 items-start w-full">
+          <div className="flex items-center justify-center px-3 py-1 w-full">
+            <p className="flex-1 font-medium text-[#a4acb9] text-sm tracking-[0.28px]">MY WORKSPACE</p>
+          </div>
+          <div className="flex flex-col items-start w-full">
+            {menuItems
+              .filter((item) => item.section === "workspace")
               .map((item) => {
                 const active = isActive(item.href)
                 return (
