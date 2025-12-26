@@ -87,24 +87,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Quick Links */}
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold mb-1">Developer Resources</h3>
-                <p className="text-sm text-muted-foreground">
-                  Access the developer portal for project management, documentation, and development tools
-                </p>
-              </div>
-              <Link href="/dev">
-                <Button>
-                  Open Dev Portal
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   )

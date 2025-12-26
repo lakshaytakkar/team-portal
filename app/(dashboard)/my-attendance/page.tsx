@@ -261,7 +261,7 @@ const columns: ColumnDef<AttendanceRecord>[] = [
   },
 ]
 
-export default function AttendancePage() {
+export default function MyAttendancePage() {
   const [data] = React.useState<AttendanceRecord[]>(defaultData)
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -296,7 +296,7 @@ export default function AttendancePage() {
   return (
     <div>
         <div className="mb-5 flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-[#0d0d12] leading-[1.35]">Attendance</h1>
+          <h1 className="text-xl font-semibold text-[#0d0d12] leading-[1.35]">My Attendance</h1>
           <div className="flex items-center gap-3">
             <Button variant="secondary" size="sm" className="h-10 border border-[#dfe1e7]">
               Download

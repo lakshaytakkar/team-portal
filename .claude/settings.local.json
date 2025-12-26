@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(git add:*)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: Add Kanban project board and workspace navigation\n\nRefactor projects page from task table to Kanban board view with\nstatus columns \\(Not Started, In Progress, Completed, On Hold\\).\nAdd My Workspace section to sidebar with My Projects and My Tasks\nnavigation. Include project detail pages, avatar utilities, and\nupdated UI components.\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: Add Kanban project board and workspace navigation\n\nRefactor projects page from task table to Kanban board view with\nstatus columns \\(Not Started, In Progress, Completed, On Hold\\).\nAdd My Workspace section to sidebar with My Projects and My Tasks\nnavigation. Include project detail pages, avatar utilities, and\nupdated UI components.\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ]
   }
 }

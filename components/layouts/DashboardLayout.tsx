@@ -20,15 +20,21 @@ function getBreadcrumbs(pathname: string): BreadcrumbItem[] {
   const breadcrumbs: BreadcrumbItem[] = [{ label: "Home", href: "/" }]
 
   const pageNames: Record<string, string> = {
-    attendance: "Attendance",
-    employee: "Employee",
-    projects: "Projects",
-    calendar: "Calendar",
-    recruitment: "Recruitment",
-    payroll: "Payroll",
-    invoices: "Invoices",
-    settings: "Settings",
-    help: "Help & Center",
+    projects: "My Projects",
+    tasks: "My Tasks",
+    "my-training": "My Training",
+    "my-calls": "My Calls",
+    "my-meeting-notes": "My Meeting Notes",
+    "my-daily-reporting": "My Daily Reporting",
+    "my-attendance": "My Attendance",
+    "my-documents": "My Documents",
+    "my-notes": "My Notes",
+    "my-calendar": "My Calendar",
+    "my-goals": "My Goals",
+    "my-performance-reviews": "My Performance Reviews",
+    "my-leave-requests": "My Leave Requests",
+    "knowledge-base": "Knowledge Base",
+    "my-resources": "My Resources",
   }
 
   if (segments.length === 0) {

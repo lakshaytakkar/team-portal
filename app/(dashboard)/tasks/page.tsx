@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import {
   Table,
@@ -13,6 +13,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Plus, Minus, ExternalLink, User } from "lucide-react"
 import { Task, TaskLevel0, TaskLevel1, TaskLevel2 } from "@/lib/types/task"
 import { initialTasks } from "@/lib/data/tasks"
@@ -181,7 +182,10 @@ function TaskRow({ task, level, expandedRows, onToggleExpand, isLast }: TaskRowP
   )
 }
 
+type TaskFilter = "all" | "today" | "this-week" | "overdue" | "completed"
+
 export default function TasksPage() {
+  const [activeFilter, setActiveFilter] = useState<TaskFilter>("all")
   const { data: tasks, isLoading, error } = useQuery({
     queryKey: ["project-tasks"],
     queryFn: fetchTasks,
@@ -214,6 +218,100 @@ export default function TasksPage() {
     }))
   }
 
+  // Calculate counts - must be before early returns
+  const completedCount = useMemo(() => {
+    if (!tasks) return 0
+    return tasks.reduce((acc, task) => {
+      const countCompleted = (t: Task): number => {
+        let total = t.status === "completed" ? 1 : 0
+        if (t.level === 0 && (t as TaskLevel0).subtasks) {
+          total += (t as TaskLevel0).subtasks!.reduce((sum, st) => sum + countCompleted(st), 0)
+        } else if (t.level === 1 && (t as TaskLevel1).subtasks) {
+          total += (t as TaskLevel1).subtasks!.reduce((sum, st) => sum + countCompleted(st), 0)
+        }
+        return total
+      }
+      return acc + countCompleted(task)
+    }, 0)
+  }, [tasks])
+
+  const totalCount = useMemo(() => {
+    if (!tasks) return 0
+    return tasks.reduce((acc, task) => {
+      const countTotal = (t: Task): number => {
+        let total = 1
+        if (t.level === 0 && (t as TaskLevel0).subtasks) {
+          total += (t as TaskLevel0).subtasks!.reduce((sum, st) => sum + countTotal(st), 0)
+        } else if (t.level === 1 && (t as TaskLevel1).subtasks) {
+          total += (t as TaskLevel1).subtasks!.reduce((sum, st) => sum + countTotal(st), 0)
+        }
+        return total
+      }
+      return acc + countTotal(task)
+    }, 0)
+  }, [tasks])
+
+  // Filter tasks based on active filter - must be before early returns
+  const filteredTasks = useMemo(() => {
+    if (!tasks) return []
+    
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const endOfWeek = new Date(today)
+    endOfWeek.setDate(today.getDate() + (7 - today.getDay()))
+
+    const filterTask = (task: Task): boolean => {
+      // For now, we'll use updatedAt as dueDate proxy since tasks don't have dueDate yet
+      const taskDate = new Date(task.updatedAt)
+      taskDate.setHours(0, 0, 0, 0)
+
+      switch (activeFilter) {
+        case "today":
+          return taskDate.getTime() === today.getTime()
+        case "this-week":
+          return taskDate >= today && taskDate <= endOfWeek
+        case "overdue":
+          return taskDate < today && task.status !== "completed"
+        case "completed":
+          return task.status === "completed"
+        case "all":
+        default:
+          return true
+      }
+    }
+
+    const filterRecursive = (task: Task): Task | null => {
+      const matches = filterTask(task)
+      const filteredSubtasks: Task[] = []
+      
+      if (task.level === 0 && (task as TaskLevel0).subtasks) {
+        (task as TaskLevel0).subtasks!.forEach((subtask) => {
+          const filtered = filterRecursive(subtask)
+          if (filtered) filteredSubtasks.push(filtered)
+        })
+      } else if (task.level === 1 && (task as TaskLevel1).subtasks) {
+        (task as TaskLevel1).subtasks!.forEach((subtask) => {
+          const filtered = filterRecursive(subtask)
+          if (filtered) filteredSubtasks.push(filtered)
+        })
+      }
+
+      if (matches || filteredSubtasks.length > 0) {
+        const filtered = { ...task }
+        if (task.level === 0) {
+          (filtered as TaskLevel0).subtasks = filteredSubtasks.length > 0 ? filteredSubtasks as TaskLevel1[] : undefined
+        } else if (task.level === 1) {
+          (filtered as TaskLevel1).subtasks = filteredSubtasks.length > 0 ? filteredSubtasks as TaskLevel2[] : undefined
+        }
+        return filtered
+      }
+      return null
+    }
+
+    return tasks.map(filterRecursive).filter((task): task is Task => task !== null)
+  }, [tasks, activeFilter])
+
+  // Early returns after all hooks
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -230,40 +328,50 @@ export default function TasksPage() {
     )
   }
 
-  const completedCount = tasks?.reduce((acc, task) => {
-    const countCompleted = (t: Task): number => {
-      let total = t.status === "completed" ? 1 : 0
-      if (t.level === 0 && (t as TaskLevel0).subtasks) {
-        total += (t as TaskLevel0).subtasks!.reduce((sum, st) => sum + countCompleted(st), 0)
-      } else if (t.level === 1 && (t as TaskLevel1).subtasks) {
-        total += (t as TaskLevel1).subtasks!.reduce((sum, st) => sum + countCompleted(st), 0)
-      }
-      return total
-    }
-    return acc + countCompleted(task)
-  }, 0) || 0
-
-  const totalCount = tasks?.reduce((acc, task) => {
-    const countTotal = (t: Task): number => {
-      let total = 1
-      if (t.level === 0 && (t as TaskLevel0).subtasks) {
-        total += (t as TaskLevel0).subtasks!.reduce((sum, st) => sum + countTotal(st), 0)
-      } else if (t.level === 1 && (t as TaskLevel1).subtasks) {
-        total += (t as TaskLevel1).subtasks!.reduce((sum, st) => sum + countTotal(st), 0)
-      }
-      return total
-    }
-    return acc + countTotal(task)
-  }, 0) || 0
-
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">My Tasks</h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="text-xl font-semibold text-[#0d0d12] leading-[1.35]">My Tasks</h1>
+        <p className="text-sm text-[#666d80] mt-1">
           Track and manage all your project tasks from design to completion
         </p>
       </div>
+
+      {/* Filter Tabs */}
+      <Tabs value={activeFilter} onValueChange={(value) => setActiveFilter(value as TaskFilter)}>
+        <TabsList className="bg-[#F6F8FA] p-0.5 rounded-xl h-auto border-0">
+          <TabsTrigger 
+            value="all" 
+            className="h-10 px-6 py-0 rounded-[10px] text-sm font-semibold leading-5 tracking-[0.28px] data-[state=active]:bg-white data-[state=active]:text-[#0D0D12] data-[state=inactive]:text-[#666D80] data-[state=inactive]:font-medium"
+          >
+            All Tasks
+          </TabsTrigger>
+          <TabsTrigger 
+            value="today"
+            className="h-10 px-6 py-0 rounded-[10px] text-sm font-semibold leading-5 tracking-[0.28px] data-[state=active]:bg-white data-[state=active]:text-[#0D0D12] data-[state=inactive]:text-[#666D80] data-[state=inactive]:font-medium"
+          >
+            Today
+          </TabsTrigger>
+          <TabsTrigger 
+            value="this-week"
+            className="h-10 px-6 py-0 rounded-[10px] text-sm font-semibold leading-5 tracking-[0.28px] data-[state=active]:bg-white data-[state=active]:text-[#0D0D12] data-[state=inactive]:text-[#666D80] data-[state=inactive]:font-medium"
+          >
+            This Week
+          </TabsTrigger>
+          <TabsTrigger 
+            value="overdue"
+            className="h-10 px-6 py-0 rounded-[10px] text-sm font-semibold leading-5 tracking-[0.28px] data-[state=active]:bg-white data-[state=active]:text-[#0D0D12] data-[state=inactive]:text-[#666D80] data-[state=inactive]:font-medium"
+          >
+            Overdue
+          </TabsTrigger>
+          <TabsTrigger 
+            value="completed"
+            className="h-10 px-6 py-0 rounded-[10px] text-sm font-semibold leading-5 tracking-[0.28px] data-[state=active]:bg-white data-[state=active]:text-[#0D0D12] data-[state=inactive]:text-[#666D80] data-[state=inactive]:font-medium"
+          >
+            Completed
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
@@ -313,16 +421,24 @@ export default function TasksPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {tasks?.map((task, index) => (
-                <TaskRow
-                  key={task.id}
-                  task={task}
-                  level={0}
-                  expandedRows={expandedRows}
-                  onToggleExpand={onToggleExpand}
-                  isLast={index === tasks.length - 1}
-                />
-              ))}
+              {filteredTasks.length > 0 ? (
+                filteredTasks.map((task, index) => (
+                  <TaskRow
+                    key={task.id}
+                    task={task}
+                    level={0}
+                    expandedRows={expandedRows}
+                    onToggleExpand={onToggleExpand}
+                    isLast={index === filteredTasks.length - 1}
+                  />
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                    No tasks found for this filter.
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
