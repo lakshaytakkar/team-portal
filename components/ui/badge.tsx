@@ -25,13 +25,13 @@ const badgeVariants = cva(
         "green-outline": "border-green-500 bg-background text-green-700",
         "yellow-outline": "border-yellow-500 bg-background text-yellow-700",
         "red-outline": "border-red-500 bg-background text-red-700",
-        "not-started": "border-transparent bg-[#ECEFF3] text-[#666D80]",
-        "in-progress": "border-transparent bg-[#F0FBFF] text-[#33CFFF]",
-        "completed": "border-transparent bg-[#EFFEFA] text-[#40C4AA]",
-        "on-hold": "border-transparent bg-[#FFF6E0] text-[#FFBD4C]",
-        "priority-high": "border-transparent bg-[#FCE8EC] text-[#B21634]",
-        "priority-medium": "border-transparent bg-[#FFF9ED] text-[#A77B2E]",
-        "priority-low": "border-transparent bg-[#ECF9F7] text-[#267666]",
+        "not-started": "border-transparent bg-status-not-started text-status-not-started-foreground",
+        "in-progress": "border-transparent bg-status-in-progress text-status-in-progress-foreground",
+        "completed": "border-transparent bg-status-completed text-status-completed-foreground",
+        "on-hold": "border-transparent bg-status-on-hold text-status-on-hold-foreground",
+        "priority-high": "border-transparent bg-priority-high text-priority-high-foreground",
+        "priority-medium": "border-transparent bg-priority-medium text-priority-medium-foreground",
+        "priority-low": "border-transparent bg-priority-low text-priority-low-foreground",
       },
       size: {
         sm: "px-2 py-0.5 text-xs rounded-md",
@@ -78,4 +78,3 @@ function Badge({ className, variant, size, style, showDot, showClose, onClose, c
 }
 
 export { Badge, badgeVariants }
-

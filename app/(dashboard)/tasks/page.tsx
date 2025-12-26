@@ -331,42 +331,42 @@ export default function TasksPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-[#0d0d12] leading-[1.35]">My Tasks</h1>
-        <p className="text-sm text-[#666d80] mt-1">
+        <h1 className="text-xl font-semibold text-foreground leading-[1.35]">My Tasks</h1>
+        <p className="text-sm text-muted-foreground mt-1">
           Track and manage all your project tasks from design to completion
         </p>
       </div>
 
       {/* Filter Tabs */}
       <Tabs value={activeFilter} onValueChange={(value) => setActiveFilter(value as TaskFilter)}>
-        <TabsList className="bg-[#F6F8FA] p-0.5 rounded-xl h-auto border-0">
+        <TabsList className="bg-muted p-0.5 rounded-xl h-auto border-0">
           <TabsTrigger 
             value="all" 
-            className="h-10 px-6 py-0 rounded-[10px] text-sm font-semibold leading-5 tracking-[0.28px] data-[state=active]:bg-white data-[state=active]:text-[#0D0D12] data-[state=inactive]:text-[#666D80] data-[state=inactive]:font-medium"
+            className="h-10 px-6 py-0 rounded-[10px] text-sm font-semibold leading-5 tracking-[0.28px] data-[state=active]:bg-white data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground data-[state=inactive]:font-medium"
           >
             All Tasks
           </TabsTrigger>
           <TabsTrigger 
             value="today"
-            className="h-10 px-6 py-0 rounded-[10px] text-sm font-semibold leading-5 tracking-[0.28px] data-[state=active]:bg-white data-[state=active]:text-[#0D0D12] data-[state=inactive]:text-[#666D80] data-[state=inactive]:font-medium"
+            className="h-10 px-6 py-0 rounded-[10px] text-sm font-semibold leading-5 tracking-[0.28px] data-[state=active]:bg-white data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground data-[state=inactive]:font-medium"
           >
             Today
           </TabsTrigger>
           <TabsTrigger 
             value="this-week"
-            className="h-10 px-6 py-0 rounded-[10px] text-sm font-semibold leading-5 tracking-[0.28px] data-[state=active]:bg-white data-[state=active]:text-[#0D0D12] data-[state=inactive]:text-[#666D80] data-[state=inactive]:font-medium"
+            className="h-10 px-6 py-0 rounded-[10px] text-sm font-semibold leading-5 tracking-[0.28px] data-[state=active]:bg-white data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground data-[state=inactive]:font-medium"
           >
             This Week
           </TabsTrigger>
           <TabsTrigger 
             value="overdue"
-            className="h-10 px-6 py-0 rounded-[10px] text-sm font-semibold leading-5 tracking-[0.28px] data-[state=active]:bg-white data-[state=active]:text-[#0D0D12] data-[state=inactive]:text-[#666D80] data-[state=inactive]:font-medium"
+            className="h-10 px-6 py-0 rounded-[10px] text-sm font-semibold leading-5 tracking-[0.28px] data-[state=active]:bg-white data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground data-[state=inactive]:font-medium"
           >
             Overdue
           </TabsTrigger>
           <TabsTrigger 
             value="completed"
-            className="h-10 px-6 py-0 rounded-[10px] text-sm font-semibold leading-5 tracking-[0.28px] data-[state=active]:bg-white data-[state=active]:text-[#0D0D12] data-[state=inactive]:text-[#666D80] data-[state=inactive]:font-medium"
+            className="h-10 px-6 py-0 rounded-[10px] text-sm font-semibold leading-5 tracking-[0.28px] data-[state=active]:bg-white data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground data-[state=inactive]:font-medium"
           >
             Completed
           </TabsTrigger>

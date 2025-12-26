@@ -8,10 +8,8 @@ import {
   Briefcase,
   Calendar,
   Clock,
-  LogOut,
   CheckSquare,
   Folder,
-  PenTool,
   CalendarDays,
   GraduationCap,
   BookOpen,
@@ -48,14 +46,9 @@ const menuItems: MenuItem[] = [
   { label: "My Calendar", href: "/my-calendar", icon: Calendar, section: "my-workspace", description: "View your schedule and upcoming events" },
   // My Workspace - Files & Notes
   { label: "My Documents", href: "/my-documents", icon: Folder, section: "my-workspace", description: "Access and manage your files" },
-  { label: "My Notes", href: "/my-notes", icon: PenTool, section: "my-workspace", description: "Create and organize your personal notes" },
   // Team & Organization
   { label: "Knowledge Base", href: "/knowledge-base", icon: BookOpen, section: "team", description: "Browse company documentation and guides" },
   { label: "My Resources", href: "/my-resources", icon: Key, section: "team", description: "Access external apps, credentials, and integrations" },
-]
-
-const bottomMenuItems: MenuItem[] = [
-  { label: "Logout", href: "/logout", icon: LogOut, description: "Sign out of your account" },
 ]
 
 const sectionLabels: Record<string, string> = {
@@ -78,21 +71,21 @@ export function Sidebar() {
 
   return (
     <TooltipProvider>
-      <div className="fixed left-0 top-0 bottom-0 w-[272px] bg-white flex flex-col py-5 z-40 border-r border-[#dfe1e7]">
+      <div className="fixed left-0 top-0 bottom-0 w-[272px] bg-card flex flex-col py-5 z-40 border-r border-border">
       {/* Header */}
       <div className="flex flex-col h-16 items-start justify-center px-2 shrink-0 w-full">
         <div className="flex h-14 items-center px-3 w-full">
           <div className="flex flex-1 gap-2.5 items-center">
             <div className="relative shrink-0 size-8">
-              <div className="absolute inset-0 bg-[#897efa] rounded" />
+              <div className="absolute inset-0 bg-primary rounded" />
             </div>
-            <p className="font-semibold leading-[1.35] text-[#0d0d12] text-xl">Team Portal</p>
+            <p className="font-semibold leading-[1.35] text-foreground text-xl">Team Portal</p>
           </div>
         </div>
       </div>
 
       {/* Menu */}
-      <div className="flex flex-1 flex-col gap-4 items-start px-4 py-0 w-full">
+      <div className="flex flex-1 flex-col gap-4 items-start px-4 py-0 w-full overflow-y-auto">
         {sections.map((section) => {
           const sectionItems = menuItems.filter((item) => item.section === section)
           if (sectionItems.length === 0) return null
@@ -101,7 +94,7 @@ export function Sidebar() {
             <div key={section} className="flex flex-col gap-1 items-start w-full">
               {sectionLabels[section] && (
                 <div className="flex items-center justify-center px-3 py-1 w-full">
-                  <p className="flex-1 font-medium text-[#a4acb9] text-sm tracking-[0.28px]">
+                  <p className="flex-1 font-medium text-muted-foreground text-sm tracking-[0.28px]">
                     {sectionLabels[section]}
                   </p>
                 </div>
@@ -117,19 +110,19 @@ export function Sidebar() {
                           className={cn(
                             "relative flex gap-2 h-10 items-center px-3 py-2 rounded-lg w-[240px] transition-colors",
                             active
-                              ? "bg-[#f6f8fa] text-[#0d0d12]"
-                              : "bg-white text-[#666d80] hover:bg-[#f6f8fa]"
+                              ? "bg-muted text-foreground"
+                              : "bg-card text-muted-foreground hover:bg-muted"
                           )}
                         >
                           <item.icon
                             className={cn(
                               "shrink-0 size-4",
-                              active ? "text-[#0d0d12]" : "text-[#666d80]"
+                              active ? "text-foreground" : "text-muted-foreground"
                             )}
                           />
                           <p className="flex-1 font-medium text-base tracking-[0.32px]">{item.label}</p>
                           {active && (
-                            <div className="absolute bg-[#897efa] h-6 left-[-16px] rounded-br-lg rounded-tr-lg top-1/2 -translate-y-1/2 w-1" />
+                            <div className="absolute bg-primary h-6 left-[-16px] rounded-br-lg rounded-tr-lg top-1/2 -translate-y-1/2 w-1" />
                           )}
                         </Link>
                       </TooltipTrigger>
@@ -145,38 +138,6 @@ export function Sidebar() {
             </div>
           )
         })}
-
-        {/* Bottom Menu */}
-        <div className="flex flex-1 flex-col items-start justify-end w-full mt-auto">
-          {bottomMenuItems.map((item) => {
-            const isLogout = item.label === "Logout"
-            return (
-              <Tooltip key={item.href}>
-                <TooltipTrigger asChild>
-                  <Link
-                    href={item.href}
-                    className={cn(
-                      "flex gap-2 h-10 items-center px-3 py-2 rounded-lg w-full transition-colors",
-                      isLogout
-                        ? "text-[#ef4444] hover:bg-[#f6f8fa]"
-                        : "text-[#666d80] hover:bg-[#f6f8fa]"
-                    )}
-                  >
-                    <item.icon className={cn("shrink-0 size-4", isLogout ? "text-[#ef4444]" : "text-[#666d80]")} />
-                    <p className={cn("flex-1 font-medium text-base tracking-[0.32px]", isLogout && "text-[#ef4444]")}>
-                      {item.label}
-                    </p>
-                  </Link>
-                </TooltipTrigger>
-                {item.description && (
-                  <TooltipContent side="right">
-                    <p className="text-sm">{item.description}</p>
-                  </TooltipContent>
-                )}
-              </Tooltip>
-            )
-          })}
-        </div>
       </div>
     </div>
     </TooltipProvider>

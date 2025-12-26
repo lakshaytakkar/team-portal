@@ -45,6 +45,22 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+  /* Status colors */
+  --color-status-not-started: var(--status-not-started);
+  --color-status-not-started-foreground: var(--status-not-started-foreground);
+  --color-status-in-progress: var(--status-in-progress);
+  --color-status-in-progress-foreground: var(--status-in-progress-foreground);
+  --color-status-completed: var(--status-completed);
+  --color-status-completed-foreground: var(--status-completed-foreground);
+  --color-status-on-hold: var(--status-on-hold);
+  --color-status-on-hold-foreground: var(--status-on-hold-foreground);
+  /* Priority colors */
+  --color-priority-high: var(--priority-high);
+  --color-priority-high-foreground: var(--priority-high-foreground);
+  --color-priority-medium: var(--priority-medium);
+  --color-priority-medium-foreground: var(--priority-medium-foreground);
+  --color-priority-low: var(--priority-low);
+  --color-priority-low-foreground: var(--priority-low-foreground);
 }
 
 :root {
@@ -97,6 +113,31 @@
   --sidebar-accent-foreground: #08090A;
   --sidebar-border: #E2E8F0;
   --sidebar-ring: #5E6AD2;
+
+  /* Status colors */
+  --status-not-started: #ECEFF3;
+  --status-not-started-foreground: #666D80;
+  --status-in-progress: #F0FBFF;
+  --status-in-progress-foreground: #33CFFF;
+  --status-completed: #EFFEFA;
+  --status-completed-foreground: #40C4AA;
+  --status-on-hold: #FFF6E0;
+  --status-on-hold-foreground: #FFBD4C;
+
+  /* Priority colors */
+  --priority-high: #FCE8EC;
+  --priority-high-foreground: #B21634;
+  --priority-medium: #FFF9ED;
+  --priority-medium-foreground: #A77B2E;
+  --priority-low: #ECF9F7;
+  --priority-low-foreground: #267666;
+
+  /* Chart colors */
+  --chart-1: #5E6AD2;
+  --chart-2: #40C4AA;
+  --chart-3: #FFBD4C;
+  --chart-4: #33CFFF;
+  --chart-5: #B21634;
 }
 
 .dark {
@@ -127,6 +168,31 @@
   --sidebar-accent-foreground: #F7F8F8;
   --sidebar-border: rgba(255, 255, 255, 0.1);
   --sidebar-ring: #5E6AD2;
+
+  /* Status colors - darker backgrounds for dark mode */
+  --status-not-started: #1E2024;
+  --status-not-started-foreground: #9CA3AF;
+  --status-in-progress: #0C2A33;
+  --status-in-progress-foreground: #33CFFF;
+  --status-completed: #0C2922;
+  --status-completed-foreground: #40C4AA;
+  --status-on-hold: #2A2210;
+  --status-on-hold-foreground: #FFBD4C;
+
+  /* Priority colors - darker backgrounds for dark mode */
+  --priority-high: #2A1418;
+  --priority-high-foreground: #F87171;
+  --priority-medium: #2A2010;
+  --priority-medium-foreground: #FBBF24;
+  --priority-low: #0C2922;
+  --priority-low-foreground: #34D399;
+
+  /* Chart colors - same as light mode */
+  --chart-1: #5E6AD2;
+  --chart-2: #40C4AA;
+  --chart-3: #FFBD4C;
+  --chart-4: #33CFFF;
+  --chart-5: #F87171;
 }
 
 @layer base {

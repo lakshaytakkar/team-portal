@@ -58,25 +58,25 @@ const columns = [
   {
     id: "to-do" as const,
     title: "To Do",
-    dotColor: "bg-[#666D80]",
+    dotColor: "bg-muted-foreground",
     tasks: [] as Task[],
   },
   {
     id: "in-progress" as const,
     title: "In Progress",
-    dotColor: "bg-[#33CFFF]",
+    dotColor: "bg-status-in-progress-foreground",
     tasks: [] as Task[],
   },
   {
     id: "review" as const,
     title: "Review",
-    dotColor: "bg-[#FFBD4C]",
+    dotColor: "bg-status-on-hold-foreground",
     tasks: [] as Task[],
   },
   {
     id: "completed" as const,
     title: "Completed",
-    dotColor: "bg-[#40C4AA]",
+    dotColor: "bg-status-completed-foreground",
     tasks: [] as Task[],
   },
 ]
@@ -215,33 +215,33 @@ function CalendarView({
       case "high":
       case "urgent":
         return {
-          bg: "bg-[#F3F2FF]",
-          border: "bg-[#897EFA]",
-          text: "text-[#36394A]",
+          bg: "bg-primary/10",
+          border: "bg-primary",
+          text: "text-foreground",
         }
       case "medium":
         return {
-          bg: "bg-[#FFF9E8]",
-          border: "bg-[#FAC515]",
-          text: "text-[#36394A]",
+          bg: "bg-status-on-hold",
+          border: "bg-status-on-hold-foreground",
+          text: "text-foreground",
         }
       case "low":
         return {
-          bg: "bg-[#ECF9F7]",
-          border: "bg-[#40C4AA]",
-          text: "text-[#36394A]",
+          bg: "bg-priority-low",
+          border: "bg-status-completed-foreground",
+          text: "text-foreground",
         }
       default:
         return {
-          bg: "bg-[#F3F2FF]",
-          border: "bg-[#897EFA]",
-          text: "text-[#36394A]",
+          bg: "bg-primary/10",
+          border: "bg-primary",
+          text: "text-foreground",
         }
     }
   }
   
   return (
-    <div className="border border-[#DFE1E6] rounded-[14px] overflow-hidden">
+    <div className="border border-border rounded-[14px] overflow-hidden">
       {/* Calendar Grid */}
       <div className="flex">
         {weekDays.map((day, dayIndex) => {
@@ -252,10 +252,10 @@ function CalendarView({
             <div key={day} className="flex-1 flex flex-col">
               {/* Day Header */}
               <div className={cn(
-                "h-10 flex items-center justify-center px-3 border-b border-[#DFE1E6]",
-                isWeekend ? "bg-[#F6F8FA]" : "bg-white"
+                "h-10 flex items-center justify-center px-3 border-b border-border",
+                isWeekend ? "bg-muted" : "bg-white"
               )}>
-                <span className="text-sm font-medium text-[#666D80] leading-[1.5] tracking-[0.28px]">
+                <span className="text-sm font-medium text-muted-foreground leading-[1.5] tracking-[0.28px]">
                   {day}
                 </span>
               </div>
@@ -273,14 +273,14 @@ function CalendarView({
                   <div
                     key={`${dayIndex}-${weekIndex}`}
                     className={cn(
-                      "h-32 flex flex-col p-3 border-b border-r border-[#DFE1E6]",
-                      isWeekendCell ? "bg-[#F6F8FA]" : "bg-white"
+                      "h-32 flex flex-col p-3 border-b border-r border-border",
+                      isWeekendCell ? "bg-muted" : "bg-white"
                     )}
                   >
                     {/* Date Number */}
                     <div className="flex justify-end mb-2">
                       {isToday ? (
-                        <div className="bg-[#897EFA] rounded-[4px] size-[21px] flex items-center justify-center">
+                        <div className="bg-primary rounded-[4px] size-[21px] flex items-center justify-center">
                           <span className="text-[10px] font-semibold text-white leading-[1.5] tracking-[0.2px]">
                             {dayData.date}
                           </span>
@@ -288,7 +288,7 @@ function CalendarView({
                       ) : (
                         <span className={cn(
                           "text-sm leading-[1.5] tracking-[0.28px]",
-                          isOtherMonth ? "text-[#A4ACB9]" : "text-[#0D0D12]"
+                          isOtherMonth ? "text-muted-foreground" : "text-foreground"
                         )}>
                           {dayData.date}
                         </span>
@@ -324,7 +324,7 @@ function CalendarView({
                         {remainingCount > 0 && (
                           <span className={cn(
                             "text-[10px] font-medium leading-[1.5] tracking-[0.2px]",
-                            isOtherMonth ? "text-[#818898]" : "text-[#0D0D12]"
+                            isOtherMonth ? "text-muted-foreground" : "text-foreground"
                           )}>
                             +{remainingCount} more
                           </span>
@@ -366,29 +366,29 @@ function TaskCard({ task }: { task: Task }) {
   const displayAssignees = assignees.slice(0, 2)
 
   return (
-    <Card className="border border-[#DFE1E7] rounded-2xl p-4 bg-white">
+    <Card className="border border-border rounded-2xl p-4 bg-white">
       <div className="flex items-center justify-between mb-2.5">
         <Badge variant={priority.variant} className="h-6 px-2.5 py-0.5 rounded-2xl text-sm font-medium">
           {priority.label}
         </Badge>
         <button className="w-4 h-4 flex items-center justify-center">
-          <MoreVertical className="h-4 w-4 text-[#666D80]" />
+          <MoreVertical className="h-4 w-4 text-muted-foreground" />
         </button>
       </div>
       
-      <div className="border-b border-[#DFE1E7] pb-2.5 mb-2.5">
-        <h3 className="font-medium text-xs text-[#0D0D12] leading-4 tracking-[0.24px] mb-1.5">
+      <div className="border-b border-border pb-2.5 mb-2.5">
+        <h3 className="font-medium text-xs text-foreground leading-4 tracking-[0.24px] mb-1.5">
           {task.name}
         </h3>
         {task.description && (
-          <p className="text-xs text-[#666D80] font-normal leading-4 tracking-[0.24px] line-clamp-3">
+          <p className="text-xs text-muted-foreground font-normal leading-4 tracking-[0.24px] line-clamp-3">
             {task.description}
           </p>
         )}
         <div className="flex gap-6 items-center mt-2.5">
           <div className="flex items-center gap-1">
-            <Calendar className="h-4 w-4 text-[#818998]" />
-            <span className="text-xs text-[#666D80] font-medium leading-4 tracking-[0.24px]">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground font-medium leading-4 tracking-[0.24px]">
               {new Date(dueDate).toLocaleDateString("en-US", { 
                 month: "long", 
                 day: "numeric", 
@@ -397,8 +397,8 @@ function TaskCard({ task }: { task: Task }) {
             </span>
           </div>
           <div className="flex items-center gap-1">
-            <MessageSquare className="h-4 w-4 text-[#818998]" />
-            <span className="text-xs text-[#666D80] font-medium leading-4 tracking-[0.24px]">
+            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground font-medium leading-4 tracking-[0.24px]">
               {commentsCount}
             </span>
           </div>
@@ -431,7 +431,7 @@ function TaskCard({ task }: { task: Task }) {
               />
             </svg>
           </div>
-          <span className="text-xs text-[#666D80] font-medium leading-4 tracking-[0.24px]">
+          <span className="text-xs text-muted-foreground font-medium leading-4 tracking-[0.24px]">
             {progress}%
           </span>
         </div>
@@ -532,14 +532,14 @@ export default function ProjectDetailsPage() {
     <div className="space-y-5">
       {/* Project Header */}
       <div className="flex flex-col gap-4">
-        <h1 className="text-2xl font-semibold text-[#0D0D12] leading-[1.3]">
+        <h1 className="text-2xl font-semibold text-foreground leading-[1.3]">
           {project.name}
         </h1>
         
         <div className="flex flex-col gap-2.5">
           {/* Project Status */}
           <div className="flex items-center">
-            <span className="text-base text-[#666D80] font-normal leading-6 tracking-[0.32px] w-[150px]">
+            <span className="text-base text-muted-foreground font-normal leading-6 tracking-[0.32px] w-[150px]">
               Project Status
             </span>
             <Badge variant={status.variant} className="h-6 px-2.5 py-0.5 rounded-2xl text-sm font-medium leading-5">
@@ -549,16 +549,16 @@ export default function ProjectDetailsPage() {
           
           {/* Progress */}
           <div className="flex items-center">
-            <span className="text-base text-[#666D80] font-normal leading-6 tracking-[0.32px] w-[150px]">
+            <span className="text-base text-muted-foreground font-normal leading-6 tracking-[0.32px] w-[150px]">
               Progress
             </span>
             <div className="flex items-center gap-4">
-              <span className="text-base text-[#272835] font-medium leading-6 tracking-[0.32px]">
+              <span className="text-base text-foreground font-medium leading-6 tracking-[0.32px]">
                 {project.progress}%
               </span>
-              <div className="relative w-[130px] h-2 bg-[#DFE1E7] rounded-full overflow-hidden">
+              <div className="relative w-[130px] h-2 bg-border rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-[#897EFA] rounded-l-full transition-all"
+                  className="h-full bg-primary rounded-l-full transition-all"
                   style={{ width: `${project.progress}%` }}
                 />
               </div>
@@ -568,10 +568,10 @@ export default function ProjectDetailsPage() {
           {/* Dates */}
           {dateRange && (
             <div className="flex items-center">
-              <span className="text-base text-[#666D80] font-normal leading-6 tracking-[0.32px] w-[150px]">
+              <span className="text-base text-muted-foreground font-normal leading-6 tracking-[0.32px] w-[150px]">
                 Dates
               </span>
-              <span className="text-base text-[#272835] font-medium leading-6 tracking-[0.32px]">
+              <span className="text-base text-foreground font-medium leading-6 tracking-[0.32px]">
                 {dateRange}
               </span>
             </div>
@@ -579,10 +579,10 @@ export default function ProjectDetailsPage() {
           
           {/* Project Manager */}
           <div className="flex items-center">
-            <span className="text-base text-[#666D80] font-normal leading-6 tracking-[0.32px] w-[150px]">
+            <span className="text-base text-muted-foreground font-normal leading-6 tracking-[0.32px] w-[150px]">
               Project Manager
             </span>
-            <div className="flex items-center gap-1.5 pl-1 pr-3 py-1 border border-[#DFE1E7] rounded-[32px]">
+            <div className="flex items-center gap-1.5 pl-1 pr-3 py-1 border border-border rounded-[32px]">
               <Avatar className="h-6 w-6 border-2 border-white rounded-full">
                 <AvatarImage src={getAvatarForUser(project.owner.id || project.owner.name)} alt={project.owner.name} />
                 <AvatarFallback className="text-xs bg-muted">
@@ -593,7 +593,7 @@ export default function ProjectDetailsPage() {
                     .toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <span className="text-base text-[#272835] font-medium leading-6 tracking-[0.32px]">
+              <span className="text-base text-foreground font-medium leading-6 tracking-[0.32px]">
                 {project.owner.name}
               </span>
             </div>
@@ -601,14 +601,14 @@ export default function ProjectDetailsPage() {
           
           {/* Team Members */}
           <div className="flex items-center">
-            <span className="text-base text-[#666D80] font-normal leading-6 tracking-[0.32px] w-[150px]">
+            <span className="text-base text-muted-foreground font-normal leading-6 tracking-[0.32px] w-[150px]">
               Team Members
             </span>
             <div className="flex items-center gap-3">
               {project.team.slice(0, 3).map((member) => (
                 <div
                   key={member.id}
-                  className="flex items-center gap-1.5 pl-1 pr-3 py-1 border border-[#DFE1E7] rounded-[32px]"
+                  className="flex items-center gap-1.5 pl-1 pr-3 py-1 border border-border rounded-[32px]"
                 >
                   <Avatar className="h-6 w-6 border-2 border-white rounded-full">
                     <AvatarImage src={getAvatarForUser(member.id || member.name)} alt={member.name} />
@@ -620,7 +620,7 @@ export default function ProjectDetailsPage() {
                         .toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="text-base text-[#272835] font-medium leading-6 tracking-[0.32px]">
+                  <span className="text-base text-foreground font-medium leading-6 tracking-[0.32px]">
                     {member.name}
                   </span>
                 </div>
@@ -628,10 +628,10 @@ export default function ProjectDetailsPage() {
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 px-4 py-2 border border-[#DFE1E7] rounded-md shadow-[0px_1px_2px_0px_rgba(13,13,18,0.06)]"
+                className="h-8 px-4 py-2 border border-border rounded-md shadow-[0px_1px_2px_0px_rgba(13,13,18,0.06)]"
               >
                 <Plus className="h-3 w-3 mr-2" />
-                <span className="text-xs font-semibold text-[#0D0D12] leading-4 tracking-[0.24px]">
+                <span className="text-xs font-semibold text-foreground leading-4 tracking-[0.24px]">
                   Invite
                 </span>
               </Button>
@@ -641,17 +641,17 @@ export default function ProjectDetailsPage() {
       </div>
 
       {/* Tasks Section */}
-      <Card className="border border-[#DFE1E7] rounded-2xl">
-        <div className="border-b border-[#DFE1E7] h-16 flex items-center justify-between px-5">
+      <Card className="border border-border rounded-2xl">
+        <div className="border-b border-border h-16 flex items-center justify-between px-5">
           {/* View Selector Tabs */}
-          <div className="bg-[#F6F8FA] p-0.5 rounded-xl flex items-center">
+          <div className="bg-muted p-0.5 rounded-xl flex items-center">
             <button
               onClick={() => setViewMode("kanban")}
               className={cn(
                 "h-10 px-6 py-0 rounded-[10px] text-sm font-semibold leading-5 tracking-[0.28px] transition-colors",
                 viewMode === "kanban"
-                  ? "bg-white text-[#0D0D12]"
-                  : "text-[#666D80] font-medium"
+                  ? "bg-white text-foreground"
+                  : "text-muted-foreground font-medium"
               )}
             >
               Kanban
@@ -661,8 +661,8 @@ export default function ProjectDetailsPage() {
               className={cn(
                 "h-10 px-6 py-0 text-sm leading-5 tracking-[0.28px] transition-colors",
                 viewMode === "table"
-                  ? "bg-white text-[#0D0D12] font-semibold rounded-[10px]"
-                  : "text-[#666D80] font-medium"
+                  ? "bg-white text-foreground font-semibold rounded-[10px]"
+                  : "text-muted-foreground font-medium"
               )}
             >
               Table
@@ -672,8 +672,8 @@ export default function ProjectDetailsPage() {
               className={cn(
                 "h-10 px-6 py-0 text-sm leading-5 tracking-[0.28px] transition-colors",
                 viewMode === "calendar"
-                  ? "bg-white text-[#0D0D12] font-semibold rounded-[10px]"
-                  : "text-[#666D80] font-medium"
+                  ? "bg-white text-foreground font-semibold rounded-[10px]"
+                  : "text-muted-foreground font-medium"
               )}
             >
               Calendar
@@ -683,21 +683,21 @@ export default function ProjectDetailsPage() {
           {/* Search and Filter */}
           <div className="flex items-center gap-3">
             <div className="relative w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#666D80]" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
                 placeholder="Search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-[38px] border border-[#DFE1E7] rounded-[10px] text-sm font-medium text-[#666D80]"
+                className="pl-10 h-[38px] border border-border rounded-[10px] text-sm font-medium text-muted-foreground"
               />
             </div>
             <Button
               variant="outline"
               size="icon"
-              className="h-[38px] w-[38px] border border-[#DFE1E7] rounded-[10px]"
+              className="h-[38px] w-[38px] border border-border rounded-[10px]"
             >
-              <Filter className="h-4 w-4 text-[#666D80]" />
+              <Filter className="h-4 w-4 text-muted-foreground" />
             </Button>
           </div>
         </div>
@@ -708,20 +708,20 @@ export default function ProjectDetailsPage() {
               {columnsWithTasks.map((column) => (
                 <div key={column.id} className="flex-1 flex flex-col gap-3">
                   {/* Column Header */}
-                  <div className="bg-[#F6F8FA] h-10 rounded-lg px-4 flex items-center justify-between">
+                  <div className="bg-muted h-10 rounded-lg px-4 flex items-center justify-between">
                     <div className="flex items-center gap-2 flex-1">
                       <div className={cn("w-2.5 h-2.5 rounded-full", column.dotColor)} />
-                      <span className="text-base font-semibold text-[#0D0D12] leading-6 tracking-[0.32px]">
+                      <span className="text-base font-semibold text-foreground leading-6 tracking-[0.32px]">
                         {column.title}
                       </span>
-                      <div className="bg-white border border-[#DFE1E7] rounded-md w-5 h-5 flex items-center justify-center">
-                        <span className="text-xs font-semibold text-[#0D0D12] leading-4 tracking-[0.24px]">
+                      <div className="bg-white border border-border rounded-md w-5 h-5 flex items-center justify-center">
+                        <span className="text-xs font-semibold text-foreground leading-4 tracking-[0.24px]">
                           {column.tasks.length}
                         </span>
                       </div>
                     </div>
                     <button className="w-5 h-5 flex items-center justify-center">
-                      <MoreVertical className="h-4 w-4 text-[#666D80]" />
+                      <MoreVertical className="h-4 w-4 text-muted-foreground" />
                     </button>
                   </div>
 
@@ -759,21 +759,21 @@ export default function ProjectDetailsPage() {
                     {/* Status Header - Clickable Accordion */}
                     <button
                       onClick={toggleSection}
-                      className="bg-[#F6F8FA] h-10 rounded-lg px-4 flex items-center justify-between hover:bg-[#E8EBEF] transition-colors cursor-pointer"
+                      className="bg-muted h-10 rounded-lg px-4 flex items-center justify-between hover:bg-secondary transition-colors cursor-pointer"
                     >
                       <div className="flex items-center gap-2 flex-1">
                         <ChevronDown
                           className={cn(
-                            "h-4 w-4 text-[#666D80] transition-transform",
+                            "h-4 w-4 text-muted-foreground transition-transform",
                             isExpanded ? "rotate-0" : "-rotate-90"
                           )}
                         />
                         <div className={cn("w-2.5 h-2.5 rounded-full", column.dotColor)} />
-                        <span className="text-base font-semibold text-[#0D0D12] leading-6 tracking-[0.32px]">
+                        <span className="text-base font-semibold text-foreground leading-6 tracking-[0.32px]">
                           {column.title}
                         </span>
-                        <div className="bg-white border border-[#DFE1E7] rounded-md w-5 h-5 flex items-center justify-center">
-                          <span className="text-xs font-semibold text-[#0D0D12] leading-4 tracking-[0.24px]">
+                        <div className="bg-white border border-border rounded-md w-5 h-5 flex items-center justify-center">
+                          <span className="text-xs font-semibold text-foreground leading-4 tracking-[0.24px]">
                             {column.tasks.length}
                           </span>
                         </div>
@@ -792,38 +792,38 @@ export default function ProjectDetailsPage() {
                           }
                         }}
                       >
-                        <MoreVertical className="h-4 w-4 text-[#666D80]" />
+                        <MoreVertical className="h-4 w-4 text-muted-foreground" />
                       </div>
                     </button>
 
                     {/* Table - Conditionally Rendered */}
                     {isExpanded && (
-                      <div className="border border-[#DFE1E7] rounded-[10px] overflow-hidden">
+                      <div className="border border-border rounded-[10px] overflow-hidden">
                       <Table>
                         <TableHeader>
                           <TableRow className="border-0 hover:bg-transparent">
-                            <TableHead className="bg-[#F6F8FA] h-10 px-3 text-[#666D80] font-medium text-sm tracking-[0.28px]">
+                            <TableHead className="bg-muted h-10 px-3 text-muted-foreground font-medium text-sm tracking-[0.28px]">
                               <div className="flex items-center gap-2.5">
-                                <Checkbox className="bg-white border border-[#DFE1E7] rounded-[4px] size-4 data-[state=checked]:bg-[#897EFA] data-[state=checked]:border-[#897EFA]" />
+                                <Checkbox className="bg-white border border-border rounded-[4px] size-4 data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
                                 <span>Task Name</span>
                               </div>
                             </TableHead>
-                            <TableHead className="bg-[#F6F8FA] h-10 px-3 text-[#666D80] font-medium text-sm tracking-[0.28px] w-[161px]">
+                            <TableHead className="bg-muted h-10 px-3 text-muted-foreground font-medium text-sm tracking-[0.28px] w-[161px]">
                               Project
                             </TableHead>
-                            <TableHead className="bg-[#F6F8FA] h-10 px-3 text-[#666D80] font-medium text-sm tracking-[0.28px] w-[152px]">
+                            <TableHead className="bg-muted h-10 px-3 text-muted-foreground font-medium text-sm tracking-[0.28px] w-[152px]">
                               Due Date
                             </TableHead>
-                            <TableHead className="bg-[#F6F8FA] h-10 px-3 text-[#666D80] font-medium text-sm tracking-[0.28px] w-[104px]">
+                            <TableHead className="bg-muted h-10 px-3 text-muted-foreground font-medium text-sm tracking-[0.28px] w-[104px]">
                               Priority
                             </TableHead>
-                            <TableHead className="bg-[#F6F8FA] h-10 px-3 text-[#666D80] font-medium text-sm tracking-[0.28px] w-[144px]">
+                            <TableHead className="bg-muted h-10 px-3 text-muted-foreground font-medium text-sm tracking-[0.28px] w-[144px]">
                               Progress
                             </TableHead>
-                            <TableHead className="bg-[#F6F8FA] h-10 px-3 text-[#666D80] font-medium text-sm tracking-[0.28px] w-[136px]">
+                            <TableHead className="bg-muted h-10 px-3 text-muted-foreground font-medium text-sm tracking-[0.28px] w-[136px]">
                               Assignee
                             </TableHead>
-                            <TableHead className="bg-[#F6F8FA] h-10 px-3 w-11"></TableHead>
+                            <TableHead className="bg-muted h-10 px-3 w-11"></TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -847,22 +847,22 @@ export default function ProjectDetailsPage() {
                             const displayAssignees = assignees.slice(0, 3)
                             
                             return (
-                              <TableRow key={task.id} className="border-b border-[#DFE1E7] hover:bg-transparent">
+                              <TableRow key={task.id} className="border-b border-border hover:bg-transparent">
                                 <TableCell className="h-16 px-3">
                                   <div className="flex items-center gap-2.5">
-                                    <Checkbox className="bg-white border border-[#DFE1E7] rounded-[4px] size-4 data-[state=checked]:bg-[#897EFA] data-[state=checked]:border-[#897EFA]" />
-                                    <span className="text-sm font-medium text-[#0D0D12] leading-[1.5] tracking-[0.28px]">
+                                    <Checkbox className="bg-white border border-border rounded-[4px] size-4 data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
+                                    <span className="text-sm font-medium text-foreground leading-[1.5] tracking-[0.28px]">
                                       {task.name}
                                     </span>
                                   </div>
                                 </TableCell>
                                 <TableCell className="h-16 px-3">
-                                  <span className="text-sm font-medium text-[#0D0D12] leading-[1.5] tracking-[0.28px]">
+                                  <span className="text-sm font-medium text-foreground leading-[1.5] tracking-[0.28px]">
                                     {project.name}
                                   </span>
                                 </TableCell>
                                 <TableCell className="h-16 px-3">
-                                  <span className="text-sm font-medium text-[#0D0D12] leading-[1.5] tracking-[0.28px]">
+                                  <span className="text-sm font-medium text-foreground leading-[1.5] tracking-[0.28px]">
                                     {new Date(dueDate).toLocaleDateString("en-US", { 
                                       month: "long", 
                                       day: "numeric", 
@@ -877,16 +877,16 @@ export default function ProjectDetailsPage() {
                                 </TableCell>
                                 <TableCell className="h-16 px-3">
                                   <div className="flex items-center gap-2">
-                                    <div className="relative w-[75px] h-1.5 bg-[#DFE1E7] rounded-[10px] overflow-hidden">
+                                    <div className="relative w-[75px] h-1.5 bg-border rounded-[10px] overflow-hidden">
                                       <div
                                         className={cn(
                                           "h-full rounded-l-[10px]",
-                                          progress === 100 ? "bg-[#40C4AA]" : progress >= 50 ? "bg-[#897EFA]" : "bg-[#DFE1E7]"
+                                          progress === 100 ? "bg-status-completed-foreground" : progress >= 50 ? "bg-primary" : "bg-border"
                                         )}
                                         style={{ width: `${progress}%` }}
                                       />
                                     </div>
-                                    <span className="text-xs font-medium text-[#0D0D12] leading-[1.5] tracking-[0.24px]">
+                                    <span className="text-xs font-medium text-foreground leading-[1.5] tracking-[0.24px]">
                                       {progress}%
                                     </span>
                                   </div>
@@ -912,15 +912,15 @@ export default function ProjectDetailsPage() {
                                       </Avatar>
                                     ))}
                                     {assignees.length === 0 && (
-                                      <div className="h-8 w-8 border-2 border-white rounded-full bg-[#D2C9F9] flex items-center justify-center">
-                                        <span className="text-xs text-[#897EFA]">?</span>
+                                      <div className="h-8 w-8 border-2 border-white rounded-full bg-primary/30 flex items-center justify-center">
+                                        <span className="text-xs text-primary">?</span>
                                       </div>
                                     )}
                                   </div>
                                 </TableCell>
                                 <TableCell className="h-16 px-3">
                                   <button className="w-4 h-4 flex items-center justify-center">
-                                    <MoreVertical className="h-4 w-4 text-[#666D80]" />
+                                    <MoreVertical className="h-4 w-4 text-muted-foreground" />
                                   </button>
                                 </TableCell>
                               </TableRow>

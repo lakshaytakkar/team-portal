@@ -59,7 +59,7 @@ export function DashboardLayout({ children, breadcrumbs }: DashboardLayoutProps)
   const computedBreadcrumbs = breadcrumbs || getBreadcrumbs(pathname)
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-card">
       <Sidebar />
       <div className="ml-[272px] pt-[72px]">
         <Topbar breadcrumbs={computedBreadcrumbs} />

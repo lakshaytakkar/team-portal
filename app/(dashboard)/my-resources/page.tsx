@@ -70,30 +70,30 @@ export default function MyResourcesPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-semibold text-[#0d0d12] leading-[1.35]">My Resources</h1>
-        <p className="text-sm text-[#666d80] mt-1">
+        <h1 className="text-xl font-semibold text-foreground leading-[1.35]">My Resources</h1>
+        <p className="text-sm text-muted-foreground mt-1">
           Access external apps, credentials, and integrations
         </p>
       </div>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="bg-[#F6F8FA] p-0.5 rounded-xl h-auto border-0">
+        <TabsList className="bg-muted p-0.5 rounded-xl h-auto border-0">
           <TabsTrigger
             value="apps"
-            className="h-10 px-6 py-0 rounded-[10px] text-sm font-semibold leading-5 tracking-[0.28px] data-[state=active]:bg-white data-[state=active]:text-[#0D0D12] data-[state=inactive]:text-[#666D80] data-[state=inactive]:font-medium"
+            className="h-10 px-6 py-0 rounded-[10px] text-sm font-semibold leading-5 tracking-[0.28px] data-[state=active]:bg-white data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground data-[state=inactive]:font-medium"
           >
             External Apps
           </TabsTrigger>
           <TabsTrigger
             value="credentials"
-            className="h-10 px-6 py-0 rounded-[10px] text-sm font-semibold leading-5 tracking-[0.28px] data-[state=active]:bg-white data-[state=active]:text-[#0D0D12] data-[state=inactive]:text-[#666D80] data-[state=inactive]:font-medium"
+            className="h-10 px-6 py-0 rounded-[10px] text-sm font-semibold leading-5 tracking-[0.28px] data-[state=active]:bg-white data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground data-[state=inactive]:font-medium"
           >
             My Credentials
           </TabsTrigger>
           <TabsTrigger
             value="integrations"
-            className="h-10 px-6 py-0 rounded-[10px] text-sm font-semibold leading-5 tracking-[0.28px] data-[state=active]:bg-white data-[state=active]:text-[#0D0D12] data-[state=inactive]:text-[#666D80] data-[state=inactive]:font-medium"
+            className="h-10 px-6 py-0 rounded-[10px] text-sm font-semibold leading-5 tracking-[0.28px] data-[state=active]:bg-white data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground data-[state=inactive]:font-medium"
           >
             Integrations
           </TabsTrigger>
@@ -103,7 +103,7 @@ export default function MyResourcesPage() {
         <div className="mt-6">
           {/* External Apps Tab */}
           <TabsContent value="apps" className="mt-0">
-            <Card className="border border-[#DFE1E7] rounded-2xl">
+            <Card className="border border-border rounded-2xl">
               <CardHeader>
                 <CardTitle>External Apps</CardTitle>
               </CardHeader>
@@ -114,23 +114,23 @@ export default function MyResourcesPage() {
                     return (
                       <Card
                         key={app.name}
-                        className="border border-[#DFE1E7] rounded-2xl hover:border-[#897EFA] transition-colors"
+                        className="border border-border rounded-2xl hover:border-primary transition-colors"
                       >
                         <CardContent className="p-6">
                           <div className="flex items-start gap-4">
-                            <div className="bg-[#F3F2FF] p-3 rounded-lg flex-shrink-0">
-                              <Icon className="h-6 w-6 text-[#897EFA]" />
+                            <div className="bg-primary/10 p-3 rounded-lg flex-shrink-0">
+                              <Icon className="h-6 w-6 text-primary" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h3 className="font-semibold text-base text-[#0D0D12] mb-1">
+                              <h3 className="font-semibold text-base text-foreground mb-1">
                                 {app.name}
                               </h3>
-                              <p className="text-sm text-[#666D80] mb-3">{app.description}</p>
+                              <p className="text-sm text-muted-foreground mb-3">{app.description}</p>
                               <a
                                 href={app.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-xs font-medium text-[#897EFA] hover:text-[#897EFA]/80 flex items-center gap-1"
+                                className="text-xs font-medium text-primary hover:text-primary/80 flex items-center gap-1"
                               >
                                 Launch <ExternalLink className="h-3 w-3" />
                               </a>
@@ -147,10 +147,10 @@ export default function MyResourcesPage() {
 
           {/* My Credentials Tab */}
           <TabsContent value="credentials" className="mt-0">
-            <Card className="border border-[#DFE1E7] rounded-2xl">
+            <Card className="border border-border rounded-2xl">
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>My Credentials</CardTitle>
-                <Button className="h-9 px-4 bg-[#897EFA] text-white rounded-lg hover:bg-[#897EFA]/90">
+                <Button className="h-9 px-4 bg-primary text-white rounded-lg hover:bg-primary/90">
                   <Key className="h-4 w-4 mr-2" />
                   Add Credential
                 </Button>
@@ -168,11 +168,11 @@ export default function MyResourcesPage() {
                   </TableHeader>
                   <TableBody>
                     <TableRow>
-                      <TableCell colSpan={5} className="h-24 text-center text-[#666d80]">
+                      <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                         <div className="flex flex-col items-center justify-center py-12">
-                          <Lock className="h-8 w-8 text-[#666d80] mb-3 opacity-50" />
-                          <p className="text-base font-medium text-[#666d80] mb-2">No credentials stored</p>
-                          <p className="text-sm text-[#666d80]">
+                          <Lock className="h-8 w-8 text-muted-foreground mb-3 opacity-50" />
+                          <p className="text-base font-medium text-muted-foreground mb-2">No credentials stored</p>
+                          <p className="text-sm text-muted-foreground">
                             Securely store your API keys, passwords, and access tokens here.
                           </p>
                         </div>
@@ -186,21 +186,21 @@ export default function MyResourcesPage() {
 
           {/* Integrations Tab */}
           <TabsContent value="integrations" className="mt-0">
-            <Card className="border border-[#DFE1E7] rounded-2xl">
+            <Card className="border border-border rounded-2xl">
               <CardHeader>
                 <CardTitle>Connected Integrations</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <div className="bg-[#F3F2FF] p-4 rounded-full mb-4">
-                      <ExternalLink className="h-8 w-8 text-[#897EFA]" />
+                    <div className="bg-primary/10 p-4 rounded-full mb-4">
+                      <ExternalLink className="h-8 w-8 text-primary" />
                     </div>
-                    <p className="text-base font-medium text-[#666d80] mb-2">No integrations connected</p>
-                    <p className="text-sm text-[#666d80] mb-4">
+                    <p className="text-base font-medium text-muted-foreground mb-2">No integrations connected</p>
+                    <p className="text-sm text-muted-foreground mb-4">
                       Connect your accounts to sync data and streamline workflows.
                     </p>
-                    <Button className="bg-[#897EFA] text-white rounded-lg hover:bg-[#897EFA]/90">
+                    <Button className="bg-primary text-white rounded-lg hover:bg-primary/90">
                       Connect Integration
                     </Button>
                   </div>

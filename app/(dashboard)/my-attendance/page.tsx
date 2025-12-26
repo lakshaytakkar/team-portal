@@ -172,9 +172,9 @@ const columns: ColumnDef<AttendanceRecord>[] = [
         <Checkbox
           checked={table.getIsAllPageRowsSelected()}
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          className="h-4 w-4 rounded border-[#dfe1e7] data-[state=checked]:bg-[#897efa] data-[state=checked]:border-[#897efa]"
+          className="h-4 w-4 rounded border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
         />
-        <span className="text-sm font-medium text-[#666d80] tracking-[0.28px]">No</span>
+        <span className="text-sm font-medium text-muted-foreground tracking-[0.28px]">No</span>
       </div>
     ),
     cell: ({ row }) => (
@@ -182,9 +182,9 @@ const columns: ColumnDef<AttendanceRecord>[] = [
         <Checkbox
           checked={row.getIsSelected()}
           onCheckedChange={(value) => row.toggleSelected(!!value)}
-          className="h-4 w-4 rounded border-[#dfe1e7] data-[state=checked]:bg-[#897efa] data-[state=checked]:border-[#897efa]"
+          className="h-4 w-4 rounded border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
         />
-        <span className="text-sm font-medium text-[#0d0d12] tracking-[0.28px]">{row.original.no}</span>
+        <span className="text-sm font-medium text-foreground tracking-[0.28px]">{row.original.no}</span>
       </div>
     ),
     enableSorting: false,
@@ -198,14 +198,14 @@ const columns: ColumnDef<AttendanceRecord>[] = [
       <div className="flex items-center gap-2.5">
         <Avatar className="h-8 w-8">
           <AvatarImage src={getAvatarForUser(row.original.employeeName || "user")} />
-          <AvatarFallback className="bg-[#dad7fd] text-[#897efa]">
+          <AvatarFallback className="bg-primary/20 text-primary">
             {row.original.employeeName
               .split(" ")
               .map((n) => n[0])
               .join("")}
           </AvatarFallback>
         </Avatar>
-        <span className="text-sm font-medium text-[#0d0d12] tracking-[0.28px]">{row.original.employeeName}</span>
+        <span className="text-sm font-medium text-foreground tracking-[0.28px]">{row.original.employeeName}</span>
       </div>
     ),
   },
@@ -213,9 +213,9 @@ const columns: ColumnDef<AttendanceRecord>[] = [
     accessorKey: "department",
     header: "Department",
     cell: ({ row }) => (
-      <div className="inline-flex items-center gap-1 rounded-full border border-[#339d88] bg-white px-2 py-0.5 h-5">
-        <div className="h-1.5 w-1.5 rounded-full bg-[#339d88]" />
-        <span className="text-xs font-medium leading-[18px] text-[#339d88] tracking-[0.12px]">
+      <div className="inline-flex items-center gap-1 rounded-full border border-status-completed-foreground bg-white px-2 py-0.5 h-5">
+        <div className="h-1.5 w-1.5 rounded-full bg-status-completed-foreground" />
+        <span className="text-xs font-medium leading-[18px] text-status-completed-foreground tracking-[0.12px]">
           {row.original.department}
         </span>
       </div>
@@ -225,35 +225,35 @@ const columns: ColumnDef<AttendanceRecord>[] = [
     accessorKey: "clockIn",
     header: "Clock In",
     cell: ({ row }) => (
-      <span className="text-sm font-medium text-[#0d0d12] tracking-[0.28px]">{row.original.clockIn}</span>
+      <span className="text-sm font-medium text-foreground tracking-[0.28px]">{row.original.clockIn}</span>
     ),
   },
   {
     accessorKey: "clockOut",
     header: "Clock Out",
     cell: ({ row }) => (
-      <span className="text-sm font-medium text-[#0d0d12] tracking-[0.28px]">{row.original.clockOut}</span>
+      <span className="text-sm font-medium text-foreground tracking-[0.28px]">{row.original.clockOut}</span>
     ),
   },
   {
     accessorKey: "workHours",
     header: "Work Hours",
     cell: ({ row }) => (
-      <span className="text-sm font-medium text-[#0d0d12] tracking-[0.28px]">{row.original.workHours}</span>
+      <span className="text-sm font-medium text-foreground tracking-[0.28px]">{row.original.workHours}</span>
     ),
   },
   {
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => (
-      <span className="text-sm font-medium text-[#0d0d12] tracking-[0.28px]">{row.original.status}</span>
+      <span className="text-sm font-medium text-foreground tracking-[0.28px]">{row.original.status}</span>
     ),
   },
   {
     id: "actions",
     cell: () => (
       <button className="flex items-center justify-center w-4 h-4">
-        <MoreVertical className="h-4 w-4 text-[#666d80]" />
+        <MoreVertical className="h-4 w-4 text-muted-foreground" />
       </button>
     ),
     enableSorting: false,
@@ -296,46 +296,46 @@ export default function MyAttendancePage() {
   return (
     <div>
         <div className="mb-5 flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-[#0d0d12] leading-[1.35]">My Attendance</h1>
+          <h1 className="text-xl font-semibold text-foreground leading-[1.35]">My Attendance</h1>
           <div className="flex items-center gap-3">
-            <Button variant="secondary" size="sm" className="h-10 border border-[#dfe1e7]">
+            <Button variant="secondary" size="sm" className="h-10 border border-border">
               Download
             </Button>
-            <Button variant="primary" size="sm" className="h-10 border border-[#897efa]">
+            <Button variant="primary" size="sm" className="h-10 border border-primary">
               Request for Leave
             </Button>
           </div>
         </div>
 
-        <div className="rounded-[14px] border border-[#dfe1e7] bg-white overflow-hidden">
+        <div className="rounded-[14px] border border-border bg-white overflow-hidden">
           {/* Table Header */}
-          <div className="flex h-16 items-center justify-between border-b border-[#dfe1e7] px-5 py-2 bg-white">
-            <h2 className="text-base font-semibold text-[#0d0d12] tracking-[0.32px]">Attendance Table</h2>
+          <div className="flex h-16 items-center justify-between border-b border-border px-5 py-2 bg-white">
+            <h2 className="text-base font-semibold text-foreground tracking-[0.32px]">Attendance Table</h2>
             <div className="flex items-center gap-3">
               <div className="relative w-64">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#666d80]" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Search"
                   value={globalFilter ?? ""}
                   onChange={(e) => setGlobalFilter(e.target.value)}
-                  className="h-[38px] border border-[#dfe1e7] pl-10 pr-3 text-sm"
+                  className="h-[38px] border border-border pl-10 pr-3 text-sm"
                 />
               </div>
               <Button
                 variant="secondary"
                 size="sm"
-                className="h-[38px] border border-[#dfe1e7] gap-2"
+                className="h-[38px] border border-border gap-2"
               >
-                <Filter className="h-4 w-4 text-[#666d80]" />
-                <span className="text-sm font-medium text-[#666d80]">Filter</span>
+                <Filter className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium text-muted-foreground">Filter</span>
               </Button>
               <Button
                 variant="secondary"
                 size="sm"
-                className="h-[38px] border border-[#dfe1e7] gap-2"
+                className="h-[38px] border border-border gap-2"
               >
-                <ArrowUpDown className="h-5 w-5 text-[#666d80]" />
-                <span className="text-sm font-medium text-[#666d80]">Sort by</span>
+                <ArrowUpDown className="h-5 w-5 text-muted-foreground" />
+                <span className="text-sm font-medium text-muted-foreground">Sort by</span>
               </Button>
             </div>
           </div>
@@ -347,12 +347,12 @@ export default function MyAttendancePage() {
                   {table.getHeaderGroups().map((headerGroup) => (
                     <TableRow
                       key={headerGroup.id}
-                      className="border-b border-[#dfe1e7] bg-[#f6f8fa] hover:bg-[#f6f8fa]"
+                      className="border-b border-border bg-muted hover:bg-muted"
                     >
                       {headerGroup.headers.map((header) => (
                         <TableHead
                           key={header.id}
-                          className="h-10 px-3 text-sm font-medium text-[#666d80] tracking-[0.28px]"
+                          className="h-10 px-3 text-sm font-medium text-muted-foreground tracking-[0.28px]"
                           style={{ width: header.getSize() !== 150 ? `${header.getSize()}px` : undefined }}
                         >
                           {header.isPlaceholder
@@ -383,7 +383,7 @@ export default function MyAttendancePage() {
                   table.getRowModel().rows.map((row) => (
                     <TableRow
                       key={row.id}
-                      className="border-b border-[#dfe1e7] hover:bg-transparent"
+                      className="border-b border-border hover:bg-transparent"
                       data-state={row.getIsSelected() && "selected"}
                     >
                       {row.getVisibleCells().map((cell) => (
@@ -409,8 +409,8 @@ export default function MyAttendancePage() {
           </div>
 
           {/* Pagination */}
-          <div className="flex h-16 items-center justify-between border-t border-[#dfe1e7] px-5 py-4">
-            <p className="text-sm font-medium text-[#0d0d12] tracking-[0.28px]">
+          <div className="flex h-16 items-center justify-between border-t border-border px-5 py-4">
+            <p className="text-sm font-medium text-foreground tracking-[0.28px]">
               Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to{" "}
               {Math.min(
                 (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
@@ -419,9 +419,9 @@ export default function MyAttendancePage() {
               of {table.getFilteredRowModel().rows.length} results
             </p>
             <div className="flex items-center gap-3">
-              <div className="flex items-center border border-[#dfe1e7] rounded-lg overflow-hidden">
-                <div className="border-r border-[#dfe1e7] px-2 py-2">
-                  <span className="text-xs font-medium text-[#0d0d12] tracking-[0.24px]">Per page</span>
+              <div className="flex items-center border border-border rounded-lg overflow-hidden">
+                <div className="border-r border-border px-2 py-2">
+                  <span className="text-xs font-medium text-foreground tracking-[0.24px]">Per page</span>
                 </div>
                 <Select
                   value={table.getState().pagination.pageSize.toString()}
@@ -447,11 +447,11 @@ export default function MyAttendancePage() {
                   size="sm"
                   onClick={() => table.previousPage()}
                   disabled={!table.getCanPreviousPage()}
-                  className="h-8 w-8 border border-[#dfe1e7] p-0"
+                  className="h-8 w-8 border border-border p-0"
                 >
                   <ChevronLeft className="h-5 w-5" />
                 </Button>
-                <div className="flex items-center border border-[#dfe1e7] rounded-lg overflow-hidden">
+                <div className="flex items-center border border-border rounded-lg overflow-hidden">
                   {(() => {
                     const pageIndex = table.getState().pagination.pageIndex
                     const pageCount = table.getPageCount()
@@ -493,10 +493,10 @@ export default function MyAttendancePage() {
                           }
                         }}
                         disabled={typeof page === "string"}
-                        className={`h-8 w-8 border-r border-[#dfe1e7] last:border-r-0 text-xs font-medium transition-colors ${
+                        className={`h-8 w-8 border-r border-border last:border-r-0 text-xs font-medium transition-colors ${
                           page === pageIndex + 1
-                            ? "bg-[#897efa] text-white font-semibold"
-                            : "text-[#0d0d12] hover:bg-[#f6f8fa]"
+                            ? "bg-primary text-white font-semibold"
+                            : "text-foreground hover:bg-muted"
                         } ${typeof page === "string" ? "cursor-default" : "cursor-pointer"}`}
                       >
                         {page}
@@ -509,7 +509,7 @@ export default function MyAttendancePage() {
                   size="sm"
                   onClick={() => table.nextPage()}
                   disabled={!table.getCanNextPage()}
-                  className="h-8 w-8 border border-[#dfe1e7] p-0"
+                  className="h-8 w-8 border border-border p-0"
                 >
                   <ChevronRight className="h-5 w-5" />
                 </Button>
