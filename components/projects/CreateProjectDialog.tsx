@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "@/components/ui/sonner"
 import {
   Dialog,
@@ -26,6 +27,9 @@ import {
   validateMaxLength,
 } from "@/lib/utils/validation"
 import { cn } from "@/lib/utils"
+import { createProject } from "@/lib/actions/projects"
+import { getManagers } from "@/lib/actions/hr"
+import type { ProjectStatus, ProjectPriority } from "@/lib/types/project"
 
 interface CreateProjectDialogProps {
   open: boolean
@@ -33,16 +37,26 @@ interface CreateProjectDialogProps {
 }
 
 export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogProps) {
+  const queryClient = useQueryClient()
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     projectName: "",
-    projectType: "",
+    status: "planning" as ProjectStatus,
+    priority: "medium" as ProjectPriority,
     dueDate: "",
     description: "",
     projectManager: "",
-    teamMembers: "",
+    teamMembers: [] as string[],
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [touched, setTouched] = useState<Record<string, boolean>>({})
+
+  // Fetch managers/users for dropdowns
+  const { data: managers = [] } = useQuery({
+    queryKey: ["managers"],
+    queryFn: getManagers,
+    enabled: open,
+  })
 
   const validateField = (name: string, value: string) => {
     let error = ""
@@ -72,10 +86,10 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
           }
         }
         break
-      case "projectType":
+      case "status":
+      case "priority":
       case "dueDate":
       case "projectManager":
-      case "teamMembers":
         const required = validateRequired(value)
         if (!required.isValid) {
           error = required.error || ""
@@ -129,21 +143,39 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
       return
     }
     
+    if (!formData.projectManager) {
+      toast.error("Project manager is required")
+      return
+    }
+    
+    setIsSubmitting(true)
     try {
-      // Handle form submission
-      console.log("Create project:", formData)
+      await createProject({
+        name: formData.projectName,
+        description: formData.description || undefined,
+        status: formData.status,
+        priority: formData.priority,
+        dueDate: formData.dueDate || undefined,
+        ownerId: formData.projectManager,
+        teamMemberIds: formData.teamMembers,
+      })
+      
       toast.success("Project created successfully", {
-        description: `Your project **${formData.projectName || "Project"}** has been created`,
+        description: `Your project **${formData.projectName}** has been created`,
         duration: 3000,
       })
+      
+      queryClient.invalidateQueries({ queryKey: ["projects"] })
+      
       // Reset form
       setFormData({
         projectName: "",
-        projectType: "",
+        status: "planning" as ProjectStatus,
+        priority: "medium" as ProjectPriority,
         dueDate: "",
         description: "",
         projectManager: "",
-        teamMembers: "",
+        teamMembers: [],
       })
       setErrors({})
       setTouched({})
@@ -154,17 +186,20 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
         description: error instanceof Error ? error.message : "An error occurred. Please try again.",
         duration: 5000,
       })
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   const handleCancel = () => {
     setFormData({
       projectName: "",
-      projectType: "",
+      status: "planning" as ProjectStatus,
+      priority: "medium" as ProjectPriority,
       dueDate: "",
       description: "",
       projectManager: "",
-      teamMembers: "",
+      teamMembers: [],
     })
     setErrors({})
     setTouched({})
@@ -199,30 +234,55 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
               {touched.projectName && errors.projectName && <FormFieldError message={errors.projectName} />}
             </div>
 
-            {/* Project Type */}
+            {/* Status */}
             <div className="space-y-2">
               <Label className="text-sm font-medium text-[#666d80] leading-[1.5] tracking-[0.28px]">
-                Project Type <span className="text-[#df1c41]">*</span>
+                Status <span className="text-[#df1c41]">*</span>
               </Label>
               <Select
-                value={formData.projectType}
-                onValueChange={(value) => handleChange("projectType", value)}
+                value={formData.status}
+                onValueChange={(value) => handleChange("status", value as ProjectStatus)}
               >
                 <SelectTrigger className={cn(
                   "h-[52px] rounded-xl border-[#dfe1e7] text-base tracking-[0.32px]",
-                  errors.projectType && touched.projectType && "border-destructive"
+                  errors.status && touched.status && "border-destructive"
                 )}>
-                  <SelectValue placeholder="Select project type" />
+                  <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="web">Web Development</SelectItem>
-                  <SelectItem value="mobile">Mobile App</SelectItem>
-                  <SelectItem value="design">Design</SelectItem>
-                  <SelectItem value="marketing">Marketing</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
+                  <SelectItem value="planning">Planning</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="on-hold">On Hold</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
                 </SelectContent>
               </Select>
-              {touched.projectType && errors.projectType && <FormFieldError message={errors.projectType} />}
+              {touched.status && errors.status && <FormFieldError message={errors.status} />}
+            </div>
+
+            {/* Priority */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-[#666d80] leading-[1.5] tracking-[0.28px]">
+                Priority <span className="text-[#df1c41]">*</span>
+              </Label>
+              <Select
+                value={formData.priority}
+                onValueChange={(value) => handleChange("priority", value as ProjectPriority)}
+              >
+                <SelectTrigger className={cn(
+                  "h-[52px] rounded-xl border-[#dfe1e7] text-base tracking-[0.32px]",
+                  errors.priority && touched.priority && "border-destructive"
+                )}>
+                  <SelectValue placeholder="Select priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="urgent">Urgent</SelectItem>
+                </SelectContent>
+              </Select>
+              {touched.priority && errors.priority && <FormFieldError message={errors.priority} />}
             </div>
 
             {/* Due Date */}
@@ -247,7 +307,7 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
             {/* Description */}
             <div className="space-y-2">
               <Label className="text-sm font-medium text-[#666d80] leading-[1.5] tracking-[0.28px]">
-                Description <span className="text-[#df1c41]">*</span>
+                Description
               </Label>
               <Textarea
                 value={formData.description}
@@ -259,7 +319,6 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
                   errors.description && touched.description && "border-destructive"
                 )}
                 maxLength={200}
-                required
               />
               <div className="flex items-end justify-between">
                 <span className="text-xs text-[#a4acb9] tracking-[0.24px]">
@@ -285,36 +344,14 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
                   <SelectValue placeholder="Select project manager" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="user1">John Doe</SelectItem>
-                  <SelectItem value="user2">Jane Smith</SelectItem>
-                  <SelectItem value="user3">Robert Johnson</SelectItem>
+                  {managers.map((manager) => (
+                    <SelectItem key={manager.id} value={manager.id}>
+                      {manager.full_name || manager.email}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               {touched.projectManager && errors.projectManager && <FormFieldError message={errors.projectManager} />}
-            </div>
-
-            {/* Team Members */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-[#666d80] leading-[1.5] tracking-[0.28px]">
-                Team Members <span className="text-[#df1c41]">*</span>
-              </Label>
-              <Select
-                value={formData.teamMembers}
-                onValueChange={(value) => handleChange("teamMembers", value)}
-              >
-                <SelectTrigger className={cn(
-                  "h-[52px] rounded-xl border-[#dfe1e7] text-base tracking-[0.32px]",
-                  errors.teamMembers && touched.teamMembers && "border-destructive"
-                )}>
-                  <SelectValue placeholder="Select team members" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="team1">Development Team</SelectItem>
-                  <SelectItem value="team2">Design Team</SelectItem>
-                  <SelectItem value="team3">Marketing Team</SelectItem>
-                </SelectContent>
-              </Select>
-              {touched.teamMembers && errors.teamMembers && <FormFieldError message={errors.teamMembers} />}
             </div>
           </div>
 
@@ -326,6 +363,7 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
               variant="outline"
               size="md"
               className="w-[128px]"
+              disabled={isSubmitting}
             >
               Cancel
             </Button>
@@ -333,8 +371,9 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
               type="submit"
               size="md"
               className="w-[128px]"
+              disabled={isSubmitting}
             >
-              Submit
+              {isSubmitting ? "Creating..." : "Submit"}
             </Button>
           </div>
         </form>

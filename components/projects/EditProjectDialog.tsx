@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "@/components/ui/sonner"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -10,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Project, ProjectStatus, ProjectPriority } from "@/lib/types/project"
+import { updateProject } from "@/lib/actions/projects"
+import { getManagers } from "@/lib/actions/hr"
 
 interface EditProjectDialogProps {
   open: boolean
@@ -18,27 +21,34 @@ interface EditProjectDialogProps {
 }
 
 export function EditProjectDialog({ open, onOpenChange, project }: EditProjectDialogProps) {
+  const queryClient = useQueryClient()
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     projectName: "",
-    projectType: "",
     dueDate: "",
     description: "",
     projectManager: "",
-    teamMembers: "",
+    teamMembers: [] as string[],
     startDate: "",
     priority: "medium" as ProjectPriority,
     status: "planning" as ProjectStatus,
+  })
+
+  // Fetch managers/users for dropdowns
+  const { data: managers = [] } = useQuery({
+    queryKey: ["managers"],
+    queryFn: getManagers,
+    enabled: open && !!project,
   })
 
   useEffect(() => {
     if (project) {
       setFormData({
         projectName: project.name || "",
-        projectType: "",
         dueDate: project.dueDate || "",
         description: project.description || "",
         projectManager: project.owner?.id || "",
-        teamMembers: "",
+        teamMembers: project.team.filter(m => m.id !== project.owner?.id).map(m => m.id),
         startDate: project.startDate || "",
         priority: project.priority,
         status: project.status,
@@ -48,12 +58,34 @@ export function EditProjectDialog({ open, onOpenChange, project }: EditProjectDi
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!project) return
+    
+    if (!formData.projectName || !formData.projectManager) {
+      toast.error("Project name and manager are required")
+      return
+    }
+    
+    setIsSubmitting(true)
     try {
-      console.log("Update project:", formData)
+      await updateProject(project.id, {
+        name: formData.projectName,
+        description: formData.description || undefined,
+        status: formData.status,
+        priority: formData.priority,
+        startDate: formData.startDate || undefined,
+        dueDate: formData.dueDate || undefined,
+        ownerId: formData.projectManager,
+        teamMemberIds: formData.teamMembers,
+      })
+      
       toast.success("Project updated successfully", {
-        description: `Your project **${formData.projectName || "Project"}** has been updated`,
+        description: `Your project **${formData.projectName}** has been updated`,
         duration: 3000,
       })
+      
+      queryClient.invalidateQueries({ queryKey: ["projects"] })
+      queryClient.invalidateQueries({ queryKey: ["project", project.id] })
+      
       onOpenChange(false)
     } catch (error) {
       console.error("Error updating project:", error)
@@ -61,6 +93,8 @@ export function EditProjectDialog({ open, onOpenChange, project }: EditProjectDi
         description: error instanceof Error ? error.message : "An error occurred. Please try again.",
         duration: 5000,
       })
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -91,23 +125,6 @@ export function EditProjectDialog({ open, onOpenChange, project }: EditProjectDi
               />
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-[#666d80] leading-[1.5] tracking-[0.28px]">
-                Project Type <span className="text-[#df1c41]">*</span>
-              </Label>
-              <Select value={formData.projectType} onValueChange={(value) => setFormData({ ...formData, projectType: value })}>
-                <SelectTrigger className="h-[52px] rounded-xl border-[#dfe1e7] text-base tracking-[0.32px]">
-                  <SelectValue placeholder="Select project type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="web">Web Development</SelectItem>
-                  <SelectItem value="mobile">Mobile App</SelectItem>
-                  <SelectItem value="design">Design</SelectItem>
-                  <SelectItem value="marketing">Marketing</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
 
             <div className="space-y-2">
               <Label className="text-sm font-medium text-[#666d80] leading-[1.5] tracking-[0.28px]">
@@ -150,25 +167,11 @@ export function EditProjectDialog({ open, onOpenChange, project }: EditProjectDi
                   <SelectValue placeholder="Select project manager" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="user1">John Doe</SelectItem>
-                  <SelectItem value="user2">Jane Smith</SelectItem>
-                  <SelectItem value="user3">Robert Johnson</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-[#666d80] leading-[1.5] tracking-[0.28px]">
-                Team Members <span className="text-[#df1c41]">*</span>
-              </Label>
-              <Select value={formData.teamMembers} onValueChange={(value) => setFormData({ ...formData, teamMembers: value })}>
-                <SelectTrigger className="h-[52px] rounded-xl border-[#dfe1e7] text-base tracking-[0.32px]">
-                  <SelectValue placeholder="Select team members" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="team1">Development Team</SelectItem>
-                  <SelectItem value="team2">Design Team</SelectItem>
-                  <SelectItem value="team3">Marketing Team</SelectItem>
+                  {managers.map((manager) => (
+                    <SelectItem key={manager.id} value={manager.id}>
+                      {manager.full_name || manager.email}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -243,6 +246,7 @@ export function EditProjectDialog({ open, onOpenChange, project }: EditProjectDi
               variant="outline"
               size="md"
               className="w-[128px]"
+              disabled={isSubmitting}
             >
               Cancel
             </Button>
@@ -250,8 +254,9 @@ export function EditProjectDialog({ open, onOpenChange, project }: EditProjectDi
               type="submit"
               size="md"
               className="w-[128px]"
+              disabled={isSubmitting}
             >
-              Update Project
+              {isSubmitting ? "Updating..." : "Update Project"}
             </Button>
           </div>
         </form>
@@ -259,5 +264,6 @@ export function EditProjectDialog({ open, onOpenChange, project }: EditProjectDi
     </Dialog>
   )
 }
+
 
 

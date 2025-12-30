@@ -72,14 +72,13 @@ export default function MyResourcesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-foreground leading-[1.35]">My Resources</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Access external apps, credentials, and integrations
-          </p>
-        </div>
-        <Button onClick={() => setIsAddResourceOpen(true)}>
+      <div className="bg-primary/85 text-primary-foreground rounded-md px-4 py-3 flex-shrink-0 w-full">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <h1 className="text-lg font-semibold tracking-tight text-white">My Resources</h1>
+            <p className="text-xs text-white/90 mt-0.5">Access external apps, credentials, and integrations</p>
+          </div>
+          <Button onClick={() => setIsAddResourceOpen(true)} variant="secondary" size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Add Resource
         </Button>

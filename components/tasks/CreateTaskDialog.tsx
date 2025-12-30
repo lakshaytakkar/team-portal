@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "@/components/ui/sonner"
 import {
   Dialog,
@@ -25,7 +26,12 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import { Loader2 } from "lucide-react"
 import { TaskStatus, TaskPriority } from "@/lib/types/task"
+import { createTask, getAssignableUsers, getProjectsForTasks, getParentTasks } from "@/lib/actions/tasks"
+import { useUser } from "@/lib/hooks/useUser"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { getAvatarForUser } from "@/lib/utils/avatars"
 
 interface CreateTaskDialogProps {
   open: boolean
@@ -35,22 +41,53 @@ interface CreateTaskDialogProps {
 }
 
 export function CreateTaskDialog({ open, onOpenChange, projectId, parentTaskId }: CreateTaskDialogProps) {
+  const { user } = useUser()
+  const queryClient = useQueryClient()
   const [formData, setFormData] = useState({
     taskName: "",
     status: "not-started" as TaskStatus,
     priority: "medium" as TaskPriority,
-    project: projectId || "",
+    project: projectId || "__none__",
     description: "",
     dueDate: "",
     assignedTo: "",
     figmaLink: "",
-    parentTask: parentTaskId || "",
+    parentTask: parentTaskId || "__none__",
   })
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    try {
-      console.log("Create task:", formData)
+  
+  // Fetch data for dropdowns
+  const { data: assignableUsers, isLoading: usersLoading } = useQuery({
+    queryKey: ["assignable-users"],
+    queryFn: getAssignableUsers,
+    enabled: open,
+  })
+  
+  const { data: projects, isLoading: projectsLoading } = useQuery({
+    queryKey: ["projects-for-tasks"],
+    queryFn: getProjectsForTasks,
+    enabled: open,
+  })
+  
+  const { data: parentTasks, isLoading: parentTasksLoading } = useQuery({
+    queryKey: ["parent-tasks"],
+    queryFn: () => getParentTasks(),
+    enabled: open && !parentTaskId,
+  })
+  
+  // Set default assignedTo to current user for executives
+  useEffect(() => {
+    if (open && user && user.role === 'executive' && !formData.assignedTo) {
+      setFormData(prev => ({ ...prev, assignedTo: user.id }))
+    }
+  }, [open, user, formData.assignedTo])
+  
+  const createMutation = useMutation({
+    mutationFn: createTask,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-tasks"] })
+      queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      queryClient.invalidateQueries({ queryKey: ["admin-tasks"] })
+      queryClient.invalidateQueries({ queryKey: ["task-analytics"] })
       toast.success("Task created successfully", {
         description: `Your task **${formData.taskName || "Task"}** has been created`,
         duration: 3000,
@@ -61,20 +98,50 @@ export function CreateTaskDialog({ open, onOpenChange, projectId, parentTaskId }
         taskName: "",
         status: "not-started",
         priority: "medium",
-        project: projectId || "",
+        project: projectId || "__none__",
         description: "",
         dueDate: "",
         assignedTo: "",
         figmaLink: "",
-        parentTask: parentTaskId || "",
+        parentTask: parentTaskId || "__none__",
       })
-    } catch (error) {
-      console.error("Error creating task:", error)
+    },
+    onError: (error: Error) => {
       toast.error("Failed to create task", {
-        description: error instanceof Error ? error.message : "An error occurred. Please try again.",
+        description: error.message,
         duration: 5000,
       })
+    },
+  })
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!formData.taskName || formData.taskName.trim().length < 3) {
+      toast.error("Task name must be at least 3 characters")
+      return
     }
+    
+    if (!formData.assignedTo) {
+      toast.error("Please assign the task to a team member")
+      return
+    }
+    
+    // Convert special values back to undefined
+    const projectId = formData.project && formData.project !== "__none__" ? formData.project : undefined
+    const parentId = formData.parentTask && formData.parentTask !== "__none__" ? formData.parentTask : undefined
+    
+      createMutation.mutate({
+      name: formData.taskName.trim(),
+      description: formData.description || undefined,
+      status: formData.status,
+      priority: formData.priority,
+      projectId,
+      parentId,
+      assignedTo: formData.assignedTo,
+      dueDate: formData.dueDate || undefined,
+      figmaLink: formData.figmaLink || undefined,
+    })
   }
 
   const handleCancel = () => {
@@ -82,15 +149,35 @@ export function CreateTaskDialog({ open, onOpenChange, projectId, parentTaskId }
       taskName: "",
       status: "not-started",
       priority: "medium",
-      project: projectId || "",
+      project: projectId || "__none__",
       description: "",
       dueDate: "",
       assignedTo: "",
       figmaLink: "",
-      parentTask: parentTaskId || "",
+      parentTask: parentTaskId || "__none__",
     })
     onOpenChange(false)
   }
+  
+  // Reset form when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setFormData({
+        taskName: "",
+        status: "not-started",
+        priority: "medium",
+        project: projectId || "__none__",
+        description: "",
+        dueDate: "",
+        assignedTo: "",
+        figmaLink: "",
+        parentTask: parentTaskId || "__none__",
+      })
+    }
+  }, [open, projectId, parentTaskId])
+  
+  // Get selected user for display
+  const selectedUser = assignableUsers?.find(u => u.id === formData.assignedTo)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -137,6 +224,62 @@ export function CreateTaskDialog({ open, onOpenChange, projectId, parentTaskId }
               </Select>
             </div>
 
+            {/* Assigned To */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-[#666d80] leading-[1.5] tracking-[0.28px]">
+                Assigned To <span className="text-[#df1c41]">*</span>
+              </Label>
+              <Select 
+                value={formData.assignedTo} 
+                onValueChange={(value) => setFormData({ ...formData, assignedTo: value })}
+              >
+                <SelectTrigger className="h-[52px] rounded-xl border-[#dfe1e7] text-base tracking-[0.32px]">
+                  {selectedUser ? (
+                    <div className="flex items-center gap-2 flex-1">
+                      <Avatar className="h-5 w-5">
+                        <AvatarImage src={getAvatarForUser(selectedUser.id || selectedUser.name)} alt={selectedUser.name} />
+                        <AvatarFallback className="text-xs">
+                          {selectedUser.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                            .toUpperCase()
+                            .slice(0, 2)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span>{selectedUser.name}</span>
+                    </div>
+                  ) : (
+                    <SelectValue placeholder="Select assignee" />
+                  )}
+                </SelectTrigger>
+                <SelectContent>
+                  {usersLoading ? (
+                    <SelectItem value="__loading__" disabled>Loading users...</SelectItem>
+                  ) : (
+                    assignableUsers?.map((user) => (
+                      <SelectItem key={user.id} value={user.id}>
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src={getAvatarForUser(user.id || user.name)} alt={user.name} />
+                            <AvatarFallback className="text-xs">
+                              {user.name
+                                .split(" ")
+                                .map((n) => n[0])
+                                .join("")
+                                .toUpperCase()
+                                .slice(0, 2)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span>{user.name}</span>
+                        </div>
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Priority */}
             <div className="space-y-2">
               <Label className="text-sm font-medium text-[#666d80] leading-[1.5] tracking-[0.28px]">
@@ -171,17 +314,23 @@ export function CreateTaskDialog({ open, onOpenChange, projectId, parentTaskId }
                       Project
                     </Label>
                     <Select 
-                      value={formData.project} 
+                      value={formData.project || "__none__"} 
                       onValueChange={(value) => setFormData({ ...formData, project: value })}
                     >
                       <SelectTrigger className="h-[52px] rounded-xl border-[#dfe1e7] text-base tracking-[0.32px]">
                         <SelectValue placeholder="Select project (optional)" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
-                        <SelectItem value="project-1">Project 1</SelectItem>
-                        <SelectItem value="project-2">Project 2</SelectItem>
-                        <SelectItem value="project-3">Project 3</SelectItem>
+                        <SelectItem value="__none__">None</SelectItem>
+                        {projectsLoading ? (
+                          <SelectItem value="__loading__" disabled>Loading projects...</SelectItem>
+                        ) : (
+                          projects?.map((project) => (
+                            <SelectItem key={project.id} value={project.id}>
+                              {project.name}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -212,27 +361,6 @@ export function CreateTaskDialog({ open, onOpenChange, projectId, parentTaskId }
                     />
                   </div>
 
-                  {/* Assigned To */}
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-[#666d80] leading-[1.5] tracking-[0.28px]">
-                      Assigned To
-                    </Label>
-                    <Select 
-                      value={formData.assignedTo} 
-                      onValueChange={(value) => setFormData({ ...formData, assignedTo: value })}
-                    >
-                      <SelectTrigger className="h-[52px] rounded-xl border-[#dfe1e7] text-base tracking-[0.32px]">
-                        <SelectValue placeholder="Select assignee (optional)" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="">Unassigned</SelectItem>
-                        <SelectItem value="user-1">John Doe</SelectItem>
-                        <SelectItem value="user-2">Jane Smith</SelectItem>
-                        <SelectItem value="user-3">Robert Johnson</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
                   {/* Figma Link */}
                   <div className="space-y-2">
                     <Label className="text-sm font-medium text-[#666d80] leading-[1.5] tracking-[0.28px]">
@@ -254,16 +382,23 @@ export function CreateTaskDialog({ open, onOpenChange, projectId, parentTaskId }
                         Parent Task
                       </Label>
                       <Select 
-                        value={formData.parentTask} 
+                        value={formData.parentTask || "__none__"} 
                         onValueChange={(value) => setFormData({ ...formData, parentTask: value })}
                       >
                         <SelectTrigger className="h-[52px] rounded-xl border-[#dfe1e7] text-base tracking-[0.32px]">
                           <SelectValue placeholder="Select parent task (optional)" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">None</SelectItem>
-                          <SelectItem value="task-1">Task 1</SelectItem>
-                          <SelectItem value="task-2">Task 2</SelectItem>
+                          <SelectItem value="__none__">None</SelectItem>
+                          {parentTasksLoading ? (
+                            <SelectItem value="__loading__" disabled>Loading tasks...</SelectItem>
+                          ) : (
+                            parentTasks?.map((task) => (
+                              <SelectItem key={task.id} value={task.id}>
+                                {task.name} {task.level === 0 ? '(Level 0)' : '(Level 1)'}
+                              </SelectItem>
+                            ))
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
@@ -288,8 +423,16 @@ export function CreateTaskDialog({ open, onOpenChange, projectId, parentTaskId }
               type="submit"
               size="md"
               className="w-[128px]"
+              disabled={createMutation.isPending}
             >
-              Create Task
+              {createMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                "Create Task"
+              )}
             </Button>
           </div>
         </form>
@@ -297,5 +440,6 @@ export function CreateTaskDialog({ open, onOpenChange, projectId, parentTaskId }
     </Dialog>
   )
 }
+
 
 

@@ -25,6 +25,8 @@ import {
 } from "@/components/ui/accordion"
 import { X } from "lucide-react"
 
+const NONE_VALUE = "__none__"
+
 interface CreateEmployeeDrawerProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -216,12 +218,15 @@ export function CreateEmployeeDrawer({ open, onOpenChange }: CreateEmployeeDrawe
                   </div>
                   <div className="space-y-2">
                     <Label className="text-sm font-medium text-[#666d80] leading-[1.5] tracking-[0.28px]">Manager</Label>
-                    <Select value={formData.manager} onValueChange={(value) => setFormData({ ...formData, manager: value })}>
+                    <Select 
+                      value={formData.manager || NONE_VALUE} 
+                      onValueChange={(value) => setFormData({ ...formData, manager: value === NONE_VALUE ? "" : value })}
+                    >
                       <SelectTrigger className="h-[52px] rounded-xl border-[#dfe1e7] text-base tracking-[0.32px]">
                         <SelectValue placeholder="Select manager" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value={NONE_VALUE}>None</SelectItem>
                         <SelectItem value="manager-1">John Doe</SelectItem>
                         <SelectItem value="manager-2">Jane Smith</SelectItem>
                       </SelectContent>

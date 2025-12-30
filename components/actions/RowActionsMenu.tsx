@@ -28,7 +28,7 @@ type EntityType =
   | "transaction" | "tax" | "sales-order" | "automation-log" | "suggestion" | "strategic-planning"
   | "whatsapp-template" | "new-vertical" | "whatsapp-automation" | "mindmap" | "page" | "drip"
   | "market-research" | "email-automation" | "application" | "email-template" | "financial-planning"
-  | "evaluation" | "job-role" | "interview" | "job-portal" | "onboarding"
+  | "evaluation" | "job-role" | "interview" | "job-portal" | "onboarding" | "asset"
 
 interface RowActionsMenuProps {
   entityType: EntityType

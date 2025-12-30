@@ -2,10 +2,9 @@
 
 import * as React from "react"
 import { usePathname } from "next/navigation"
-import { ChevronDown } from "lucide-react"
 import { Sidebar } from "./Sidebar"
 import { Topbar } from "./Topbar"
-import { FilterHeader } from "./FilterHeader"
+import { useUserContext } from "@/lib/providers/UserContextProvider"
 
 interface BreadcrumbItem {
   label: string
@@ -192,45 +191,15 @@ function getBreadcrumbs(pathname: string): BreadcrumbItem[] {
 export function DashboardLayout({ children, breadcrumbs }: DashboardLayoutProps) {
   const pathname = usePathname()
   const computedBreadcrumbs = breadcrumbs || getBreadcrumbs(pathname)
-  
-  const [selectedRoles, setSelectedRoles] = React.useState<string[]>([])
-  const [selectedDepartments, setSelectedDepartments] = React.useState<string[]>([])
-  const [isSuperAdminView, setIsSuperAdminView] = React.useState(false)
-  const [isCeoView, setIsCeoView] = React.useState(false)
-  const [isFilterHeaderCollapsed, setIsFilterHeaderCollapsed] = React.useState(false)
+  const { user } = useUserContext()
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Toggle Button - Always visible */}
-      {isFilterHeaderCollapsed && (
-        <button
-          onClick={() => setIsFilterHeaderCollapsed(false)}
-          className="fixed top-2 left-2 z-50 flex items-center justify-center w-8 h-8 bg-[#0d0d12] hover:bg-[#1a1a1a] rounded-md transition-colors shadow-lg"
-          aria-label="Show filter header"
-        >
-          <ChevronDown className="h-4 w-4 text-[#a0a0a0]" />
-        </button>
-      )}
-      <FilterHeader 
-        selectedRoles={selectedRoles}
-        selectedDepartments={selectedDepartments}
-        isSuperAdminView={isSuperAdminView}
-        isCeoView={isCeoView}
-        onRoleChange={setSelectedRoles}
-        onDepartmentChange={setSelectedDepartments}
-        onSuperAdminToggle={setIsSuperAdminView}
-        onCeoViewToggle={setIsCeoView}
-        isCollapsed={isFilterHeaderCollapsed}
-        onToggle={() => setIsFilterHeaderCollapsed(!isFilterHeaderCollapsed)}
-      />
       <Sidebar 
-        selectedRoles={selectedRoles}
-        selectedDepartments={selectedDepartments}
-        isSuperAdminView={isSuperAdminView}
-        isCeoView={isCeoView}
-        isFilterHeaderCollapsed={isFilterHeaderCollapsed}
+        user={user}
+        isFilterHeaderCollapsed={true}
       />
-      <div className={`ml-[272px] ${isFilterHeaderCollapsed ? 'pt-5' : 'pt-[73px]'} pr-5 pb-5 transition-all duration-300`}>
+      <div className="ml-[272px] pt-5 pr-5 pb-5">
         <div className="bg-white border border-border rounded-[14px] min-h-[calc(100vh-93px)] flex flex-col px-5 pb-5 pt-0">
           <Topbar breadcrumbs={computedBreadcrumbs} />
           <main className="flex-1">{children}</main>

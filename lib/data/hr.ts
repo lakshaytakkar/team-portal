@@ -10,6 +10,7 @@ export const initialEmployees: Employee[] = [
     department: "Engineering",
     position: "Senior Developer",
     status: "active",
+    roleType: "internal",
     hireDate: "2023-06-01",
     manager: {
       id: "user-2",
@@ -28,6 +29,7 @@ export const initialEmployees: Employee[] = [
     department: "Design",
     position: "UI/UX Designer",
     status: "active",
+    roleType: "internal",
     hireDate: "2023-08-15",
     createdAt: "2023-08-15T00:00:00Z",
     updatedAt: "2024-01-19T00:00:00Z",
@@ -41,6 +43,7 @@ export const initialEmployees: Employee[] = [
     department: "Sales",
     position: "Sales Manager",
     status: "active",
+    roleType: "client_facing",
     hireDate: "2023-03-20",
     createdAt: "2023-03-20T00:00:00Z",
     updatedAt: "2024-01-18T00:00:00Z",

@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils"
 const ROLES = [
   { value: "executive", label: "Executive" },
   { value: "manager", label: "Manager" },
+  { value: "superadmin", label: "SuperAdmin" },
 ] as const
 
 const DEPARTMENTS = [
@@ -35,6 +36,13 @@ interface FilterHeaderProps {
   onCeoViewToggle: (checked: boolean) => void
   isCollapsed?: boolean
   onToggle?: () => void
+  // New hierarchy filters
+  selectedVerticals?: string[]
+  selectedTeams?: string[]
+  onVerticalChange?: (verticals: string[]) => void
+  onTeamChange?: (teams: string[]) => void
+  verticals?: Array<{ id: string; name: string }>
+  teams?: Array<{ id: string; name: string }>
 }
 
 export function FilterHeader({ 
@@ -47,7 +55,13 @@ export function FilterHeader({
   onSuperAdminToggle,
   onCeoViewToggle,
   isCollapsed = false,
-  onToggle
+  onToggle,
+  selectedVerticals = [],
+  selectedTeams = [],
+  onVerticalChange,
+  onTeamChange,
+  verticals = [],
+  teams = [],
 }: FilterHeaderProps) {
   const handleRoleToggle = (roleValue: string) => {
     const newRoles = selectedRoles.includes(roleValue)
@@ -102,7 +116,7 @@ export function FilterHeader({
 
   const handleSuperAdminToggleChange = (checked: boolean) => {
     if (checked) {
-      // Clear all selections when enabling superadmin view
+      // Clear all selections when enabling superadmin view (for exclusive view)
       onRoleChange([])
       onDepartmentChange([])
       onCeoViewToggle(false) // Disable CEO view when SuperAdmin is enabled
@@ -120,9 +134,39 @@ export function FilterHeader({
     onCeoViewToggle(checked)
   }
 
+  const handleVerticalToggle = (verticalId: string) => {
+    if (!onVerticalChange) return
+    const newVerticals = selectedVerticals.includes(verticalId)
+      ? selectedVerticals.filter((v) => v !== verticalId)
+      : [...selectedVerticals, verticalId]
+    onVerticalChange(newVerticals)
+  }
+
+  const handleTeamToggle = (teamId: string) => {
+    if (!onTeamChange) return
+    const newTeams = selectedTeams.includes(teamId)
+      ? selectedTeams.filter((t) => t !== teamId)
+      : [...selectedTeams, teamId]
+    onTeamChange(newTeams)
+  }
+
+  const handleRemoveVertical = (e: React.MouseEvent, verticalId: string) => {
+    e.stopPropagation()
+    if (!onVerticalChange) return
+    onVerticalChange(selectedVerticals.filter((v) => v !== verticalId))
+  }
+
+  const handleRemoveTeam = (e: React.MouseEvent, teamId: string) => {
+    e.stopPropagation()
+    if (!onTeamChange) return
+    onTeamChange(selectedTeams.filter((t) => t !== teamId))
+  }
+
   const clearAll = () => {
     onRoleChange([])
     onDepartmentChange([])
+    if (onVerticalChange) onVerticalChange([])
+    if (onTeamChange) onTeamChange([])
   }
 
   // Count unique departments (HR and Recruitment count as one)
@@ -131,8 +175,9 @@ export function FilterHeader({
     ? uniqueDepartments.size - 1 // Subtract 1 because hr and recruitment count as one
     : uniqueDepartments.size
   
-  const totalSelected = selectedRoles.length + uniqueDeptCount
+  const totalSelected = selectedRoles.length + uniqueDeptCount + selectedVerticals.length + selectedTeams.length
   const hasSelections = totalSelected > 0
+  const hasHierarchyFilters = verticals.length > 0 || teams.length > 0
 
   if (isCollapsed) {
     return null
@@ -178,6 +223,87 @@ export function FilterHeader({
             className="data-[state=checked]:bg-[#897efa]"
           />
         </div>
+
+        {/* Divider */}
+        {!isSuperAdminView && !isCeoView && <div className="h-6 w-px bg-[#2a2a2a]" />}
+
+        {/* Verticals - Primary Filter */}
+        {!isSuperAdminView && !isCeoView && hasHierarchyFilters && verticals.length > 0 && (
+          <>
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-medium text-[#a0a0a0] uppercase tracking-[0.28px] whitespace-nowrap">Verticals:</span>
+              <Tabs value={selectedVerticals[0] || ""} className="w-auto">
+                <TabsList className="bg-[#1a1a1a] p-0.5 rounded-lg h-auto border border-[#2a2a2a] w-auto">
+                  {verticals.map((vertical) => {
+                    const isSelected = selectedVerticals.includes(vertical.id)
+                    return (
+                      <TabsTrigger
+                        key={vertical.id}
+                        value={vertical.id}
+                        onClick={() => handleVerticalToggle(vertical.id)}
+                        className={cn(
+                          "h-8 px-3 py-0 rounded-md text-sm font-medium leading-4 tracking-[0.28px] data-[state=active]:bg-[#897efa] data-[state=active]:text-white data-[state=inactive]:text-[#a0a0a0] data-[state=inactive]:font-medium transition-colors",
+                          isSelected && "bg-[#897efa]/20 text-[#897efa] border border-[#897efa]/40"
+                        )}
+                      >
+                        {vertical.name}
+                        {isSelected && (
+                          <X
+                            className="h-3 w-3 ml-1 cursor-pointer hover:text-[#ff4444]"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleRemoveVertical(e, vertical.id)
+                            }}
+                          />
+                        )}
+                      </TabsTrigger>
+                    )
+                  })}
+                </TabsList>
+              </Tabs>
+            </div>
+            <div className="h-6 w-px bg-[#2a2a2a]" />
+          </>
+        )}
+
+        {/* Teams - Secondary Filter */}
+        {!isSuperAdminView && !isCeoView && hasHierarchyFilters && teams.length > 0 && (
+          <>
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-medium text-[#a0a0a0] uppercase tracking-[0.28px] whitespace-nowrap">Teams:</span>
+              <Tabs value={selectedTeams[0] || ""} className="w-auto">
+                <TabsList className="bg-[#1a1a1a] p-0.5 rounded-lg h-auto border border-[#2a2a2a] w-auto">
+                  {teams.map((team) => {
+                    const isSelected = selectedTeams.includes(team.id)
+                    return (
+                      <TabsTrigger
+                        key={team.id}
+                        value={team.id}
+                        onClick={() => handleTeamToggle(team.id)}
+                        className={cn(
+                          "h-8 px-3 py-0 rounded-md text-sm font-medium leading-4 tracking-[0.28px] data-[state=active]:bg-[#897efa] data-[state=active]:text-white data-[state=inactive]:text-[#a0a0a0] data-[state=inactive]:font-medium transition-colors",
+                          isSelected && "bg-[#897efa]/20 text-[#897efa] border border-[#897efa]/40"
+                        )}
+                      >
+                        {team.name}
+                        {isSelected && (
+                          <X
+                            className="h-3 w-3 ml-1 cursor-pointer hover:text-[#ff4444]"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleRemoveTeam(e, team.id)
+                            }}
+                          />
+                        )}
+                      </TabsTrigger>
+                    )
+                  })}
+                </TabsList>
+              </Tabs>
+            </div>
+            <div className="h-6 w-px bg-[#2a2a2a]" />
+          </>
+        )}
 
         {/* Divider */}
         {!isSuperAdminView && !isCeoView && <div className="h-6 w-px bg-[#2a2a2a]" />}

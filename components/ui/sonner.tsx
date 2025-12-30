@@ -2,6 +2,7 @@
 
 import { useTheme } from "next-themes"
 import { Toaster as Sonner, toast as sonnerToast } from "sonner"
+import { Check } from "lucide-react"
 
 type ToasterProps = React.ComponentProps<typeof Sonner>
 
@@ -13,6 +14,9 @@ const Toaster = ({ ...props }: ToasterProps) => {
       theme={theme as ToasterProps["theme"]}
       className="toaster group"
       position="bottom-right"
+      icons={{
+        success: <Check className="h-4 w-4" />,
+      }}
       toastOptions={{
         duration: 3000,
         classNames: {

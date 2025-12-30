@@ -1,53 +1,58 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useParams, useRouter } from "next/navigation"
 import { notFound } from "next/navigation"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { GraduationCap, Clock, Calendar, CheckCircle2, Play, ArrowLeft } from "lucide-react"
-import { Training, TrainingStatus } from "@/lib/types/my-workspace"
+import { ArrowLeft, X } from "lucide-react"
+import { Training, TrainingVideo } from "@/lib/types/my-workspace"
 import { initialTrainings } from "@/lib/data/my-workspace"
-import { cn } from "@/lib/utils"
 import { ErrorState } from "@/components/ui/error-state"
-import { QuickDetailModal } from "@/components/details"
-import { useDetailNavigation } from "@/lib/hooks/useDetailNavigation"
-
-const statusConfig: Record<TrainingStatus, { label: string; variant: "neutral-outline" | "primary-outline" | "green-outline" }> = {
-  "not-started": { label: "Not Started", variant: "neutral-outline" },
-  "in-progress": { label: "In Progress", variant: "primary-outline" },
-  completed: { label: "Completed", variant: "green-outline" },
-}
+import { TrainingVideoPlayer } from "@/components/training/TrainingVideoPlayer"
+import { TrainingVideoSidebar } from "@/components/training/TrainingVideoSidebar"
 
 async function fetchTraining(id: string) {
   await new Promise((resolve) => setTimeout(resolve, 500))
   const training = initialTrainings.find((t) => t.id === id)
   if (!training) throw new Error("Training not found")
-  return training
-}
 
-async function fetchAllTrainings() {
-  await new Promise((resolve) => setTimeout(resolve, 100))
-  return initialTrainings
+  // Generate videos from the training (for demo - in real app this would come from API)
+  // If training already has videos, use them. Otherwise, create a single video from the url field
+  if (!training.videos) {
+    training.videos = training.url
+      ? [
+          {
+            id: `${training.id}-video-1`,
+            title: training.title,
+            url: training.url,
+            duration: training.duration,
+          },
+        ]
+      : []
+  }
+
+  return training
 }
 
 export default function TrainingDetailPage() {
   const params = useParams()
   const router = useRouter()
   const trainingId = params.id as string
-  const [isOpen, setIsOpen] = useState(true)
+  const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null)
 
   const { data: training, isLoading, error, refetch } = useQuery({
     queryKey: ["training", trainingId],
     queryFn: () => fetchTraining(trainingId),
   })
 
-  const { data: allTrainings } = useQuery({
-    queryKey: ["all-trainings"],
-    queryFn: fetchAllTrainings,
-  })
+  // Set initial selected video when training loads
+  useEffect(() => {
+    if (training && training.videos && training.videos.length > 0 && !selectedVideoId) {
+      setSelectedVideoId(training.videos[0].id)
+    }
+  }, [training, selectedVideoId])
 
   // Handle 404 for missing trainings
   useEffect(() => {
@@ -59,44 +64,59 @@ export default function TrainingDetailPage() {
     }
   }, [error, isLoading, training])
 
-  const navigation = useDetailNavigation({
-    currentId: trainingId,
-    items: allTrainings || [],
-    getId: (t) => t.id,
-    basePath: "/my-training",
-    onNavigate: (id) => {
-      router.push(`/my-training/${id}`)
-    },
-  })
+  const handleClose = useCallback(() => {
+    router.push("/my-training")
+  }, [router])
 
-  const handleClose = () => {
-    setIsOpen(false)
-    setTimeout(() => {
-      router.push("/my-training")
-    }, 200)
-  }
+  const handleVideoSelect = useCallback((videoId: string) => {
+    setSelectedVideoId(videoId)
+  }, [])
+
+  const handleVideoEnd = useCallback(() => {
+    if (!training?.videos) return
+
+    const currentIndex = training.videos.findIndex((v) => v.id === selectedVideoId)
+    if (currentIndex < training.videos.length - 1) {
+      // Auto-play next video
+      setSelectedVideoId(training.videos[currentIndex + 1].id)
+    }
+  }, [training, selectedVideoId])
 
   if (isLoading) {
     return (
-      <QuickDetailModal open={isOpen} onOpenChange={handleClose} title="Loading...">
-        <div className="space-y-4">
-          <Skeleton className="h-6 w-full" />
-          <Skeleton className="h-20 w-full" />
-          <Skeleton className="h-32 w-full" />
+      <div className="flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b bg-background">
+          <Skeleton className="h-6 w-48" />
+          <Skeleton className="h-8 w-20" />
         </div>
-      </QuickDetailModal>
+        <div className="flex-1 overflow-hidden">
+          <div className="flex h-full">
+            <Skeleton className="w-[400px] border-r" />
+            <Skeleton className="flex-1" />
+          </div>
+        </div>
+      </div>
     )
   }
 
   if (error && (!(error instanceof Error) || !error.message.toLowerCase().includes("not found"))) {
     return (
-      <QuickDetailModal open={isOpen} onOpenChange={handleClose} title="Error">
-        <ErrorState
-          title="Failed to load training"
-          message="We couldn't load this training. Please check your connection and try again."
-          onRetry={() => refetch()}
-        />
-      </QuickDetailModal>
+      <div className="flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b bg-background">
+          <h1 className="text-lg font-semibold">Error</h1>
+          <Button variant="outline" size="sm" onClick={handleClose}>
+            <X className="h-4 w-4 mr-2" />
+            Close
+          </Button>
+        </div>
+        <div className="flex-1 flex items-center justify-center p-8">
+          <ErrorState
+            title="Failed to load training"
+            message="We couldn't load this training. Please check your connection and try again."
+            onRetry={() => refetch()}
+          />
+        </div>
+      </div>
     )
   }
 
@@ -104,156 +124,81 @@ export default function TrainingDetailPage() {
     return null
   }
 
-  const status = statusConfig[training.status]
+  // Get selected video
+  const selectedVideo = training.videos?.find((v) => v.id === selectedVideoId) || null
+  const completedVideoIds: string[] = [] // TODO: Get from user progress data
 
-  const footer = (
-    <div className="flex items-center justify-between w-full">
-      <div className="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={navigation.navigatePrev}
-          disabled={!navigation.hasPrev}
-        >
-          Previous
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={navigation.navigateNext}
-          disabled={!navigation.hasNext}
-        >
-          Next
-        </Button>
+  if (!training.videos || training.videos.length === 0) {
+    return (
+      <div className="flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b bg-background">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={handleClose}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <h1 className="text-lg font-semibold">{training.title}</h1>
+          </div>
+          <Button variant="outline" size="sm" onClick={handleClose}>
+            <X className="h-4 w-4 mr-2" />
+            Close
+          </Button>
+        </div>
+        <div className="flex-1 flex items-center justify-center p-8">
+          <div className="text-center">
+            <p className="text-muted-foreground mb-2">No videos available</p>
+            <p className="text-sm text-muted-foreground">This training does not have video content.</p>
+          </div>
+        </div>
       </div>
-      <div className="flex items-center gap-2">
-        <Button variant="outline" onClick={handleClose}>
+    )
+  }
+
+  return (
+    <div className="flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 py-4 border-b bg-background shrink-0">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={handleClose}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-lg font-semibold line-clamp-1">{training.title}</h1>
+            <p className="text-sm text-muted-foreground">
+              Video {training.videos.findIndex((v) => v.id === selectedVideoId) + 1} of {training.videos.length}
+            </p>
+          </div>
+        </div>
+        <Button variant="outline" size="sm" onClick={handleClose}>
+          <X className="h-4 w-4 mr-2" />
           Close
         </Button>
-        {training.status !== "completed" && (
-          <Button>
-            <Play className="h-4 w-4 mr-2" />
-            {training.status === "not-started" ? "Start Training" : "Continue Training"}
-          </Button>
-        )}
-        {training.status === "completed" && (
-          <Button variant="outline">
-            <CheckCircle2 className="h-4 w-4 mr-2" />
-            Completed
-          </Button>
-        )}
+      </div>
+
+      {/* Main Content: Sidebar + Video Player */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Left Sidebar - Video Navigation */}
+        <div className="w-full lg:w-[400px] border-r bg-background overflow-hidden flex-shrink-0">
+          <TrainingVideoSidebar
+            videos={training.videos}
+            selectedVideoId={selectedVideoId}
+            onVideoSelect={handleVideoSelect}
+            completedVideoIds={completedVideoIds}
+          />
+        </div>
+
+        {/* Right Main Content - Video Player */}
+        <div className="flex-1 overflow-y-auto bg-gray-50/50">
+          {selectedVideo ? (
+            <div className="p-6">
+              <TrainingVideoPlayer video={selectedVideo} onVideoEnd={handleVideoEnd} />
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-full p-8">
+              <p className="text-muted-foreground">Select a video to view content</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
-
-  return (
-    <QuickDetailModal
-      open={isOpen}
-      onOpenChange={handleClose}
-      title={training.title}
-      footer={footer}
-    >
-      <div className="space-y-4">
-        {/* Status and Category */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <Badge variant={status.variant} className="h-5 px-2 py-0.5 rounded-2xl text-xs">
-            {status.label}
-          </Badge>
-          <Badge variant="outline" className="h-5 px-2 py-0.5 rounded-2xl text-xs">
-            {training.category}
-          </Badge>
-          {training.duration && (
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Clock className="h-3 w-3" />
-              <span>{training.duration} minutes</span>
-            </div>
-          )}
-        </div>
-
-        {/* Description */}
-        {training.description && (
-          <div>
-            <p className="text-sm text-foreground leading-relaxed">{training.description}</p>
-          </div>
-        )}
-
-        {/* Progress */}
-        {training.status === "in-progress" && training.progress !== undefined && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-foreground">Progress</span>
-              <span className="text-sm text-foreground font-medium">{training.progress}%</span>
-            </div>
-            <div className="relative w-full h-2 bg-border rounded-full overflow-hidden">
-              <div
-                className={cn(
-                  "h-full rounded-l-full transition-all",
-                  training.progress === 100 ? "bg-status-completed-foreground" : "bg-primary"
-                )}
-                style={{ width: `${training.progress}%` }}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Dates */}
-        <div className="space-y-2 pt-2 border-t border-border">
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <div>
-              <span className="text-xs text-muted-foreground font-medium">Started</span>
-              <p className="text-sm text-foreground font-medium">
-                {new Date(training.createdAt).toLocaleDateString("en-US", {
-                  month: "long",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-              </p>
-            </div>
-          </div>
-          {training.completedAt && (
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-status-completed-foreground" />
-              <div>
-                <span className="text-xs text-muted-foreground font-medium">Completed</span>
-                <p className="text-sm text-foreground font-medium">
-                  {new Date(training.completedAt).toLocaleDateString("en-US", {
-                    month: "long",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </p>
-              </div>
-            </div>
-          )}
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <div>
-              <span className="text-xs text-muted-foreground font-medium">Last Updated</span>
-              <p className="text-sm text-foreground font-medium">
-                {new Date(training.updatedAt).toLocaleDateString("en-US", {
-                  month: "long",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Training Link */}
-        {training.url && (
-          <div className="pt-2 border-t border-border">
-            <Button variant="outline" className="w-full" asChild>
-              <a href={training.url} target="_blank" rel="noopener noreferrer">
-                <GraduationCap className="h-4 w-4 mr-2" />
-                Open Training Course
-              </a>
-            </Button>
-          </div>
-        )}
-      </div>
-    </QuickDetailModal>
-  )
 }
-

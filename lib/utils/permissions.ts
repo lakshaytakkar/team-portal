@@ -35,8 +35,37 @@ export function canViewTeamData(role: string): boolean {
 
 // ==================== PROJECT PERMISSIONS ====================
 
-export function canViewAllProjects(role: string): boolean {
-  return role === 'superadmin'
+/**
+ * Check if user can view all projects (permission-based)
+ * @param userPermissions - User's permission object from getUserPermissions()
+ * @param role - Fallback to role-based check if permissions not available
+ */
+export function canViewAllProjects(userPermissions?: Record<string, boolean>, role?: string): boolean {
+  if (userPermissions) {
+    // Check for explicit permission
+    if (userPermissions['projects.view.all'] === true) return true
+    if (userPermissions['projects.view.assigned'] === true) return false
+  }
+  // Fallback to role-based check
+  if (role) return role === 'superadmin'
+  return false
+}
+
+/**
+ * Check if user can only view assigned projects (permission-based)
+ * @param userPermissions - User's permission object from getUserPermissions()
+ * @param role - Fallback to role-based check if permissions not available
+ */
+export function canViewAssignedProjectsOnly(userPermissions?: Record<string, boolean>, role?: string): boolean {
+  if (userPermissions) {
+    // Check for explicit permission
+    if (userPermissions['projects.view.assigned'] === true && userPermissions['projects.view.all'] !== true) {
+      return true
+    }
+  }
+  // Fallback: executives see only assigned by default
+  if (role) return role === 'executive'
+  return false
 }
 
 export function canCreateProject(role: string): boolean {
@@ -63,12 +92,48 @@ export function canAssignTeamMembers(role: string): boolean {
 
 // ==================== TASK PERMISSIONS ====================
 
-export function canViewAllTasks(role: string): boolean {
-  return role === 'superadmin'
+/**
+ * Check if user can view all tasks (permission-based)
+ * @param userPermissions - User's permission object from getUserPermissions()
+ * @param role - Fallback to role-based check if permissions not available
+ */
+export function canViewAllTasks(userPermissions?: Record<string, boolean>, role?: string): boolean {
+  if (userPermissions) {
+    // Check for explicit permission
+    if (userPermissions['tasks.view.all'] === true) return true
+    if (userPermissions['tasks.view.assigned'] === true) return false
+  }
+  // Fallback to role-based check
+  if (role) return role === 'superadmin' || role === 'manager'
+  return false
+}
+
+/**
+ * Check if user can only view assigned tasks (permission-based)
+ * @param userPermissions - User's permission object from getUserPermissions()
+ * @param role - Fallback to role-based check if permissions not available
+ */
+export function canViewAssignedTasksOnly(userPermissions?: Record<string, boolean>, role?: string): boolean {
+  if (userPermissions) {
+    // Check for explicit permission
+    if (userPermissions['tasks.view.assigned'] === true && userPermissions['tasks.view.all'] !== true) {
+      return true
+    }
+  }
+  // Fallback: executives see only assigned by default
+  if (role) return role === 'executive'
+  return false
 }
 
 export function canCreateTask(role: string): boolean {
-  return isManager(role)
+  return isManager(role) || role === 'superadmin'
+}
+
+/**
+ * Check if user can create tasks for themselves (executives can create for self)
+ */
+export function canCreateTaskForSelf(role: string): boolean {
+  return true // All roles can create tasks for themselves
 }
 
 export function canEditTask(
@@ -104,6 +169,20 @@ export function canChangeTaskPriority(role: string): boolean {
 }
 
 export function canReassignTask(role: string): boolean {
+  return isManager(role)
+}
+
+/**
+ * Check if user can perform bulk operations on tasks (SuperAdmin only)
+ */
+export function canBulkOperateTasks(role: string): boolean {
+  return role === 'superadmin'
+}
+
+/**
+ * Check if user can export tasks (Manager + SuperAdmin)
+ */
+export function canExportTasks(role: string): boolean {
   return isManager(role)
 }
 
@@ -256,5 +335,43 @@ export function canPerformDepartmentAction(
   if (!requiredDepartment) return true
   if (role === 'manager') return true // Managers can perform cross-department actions
   return userDepartment === requiredDepartment
+}
+
+// ==================== LEAVE REQUEST PERMISSIONS ====================
+
+/**
+ * Check if user can view all leave requests (not just own)
+ */
+export function canViewAllLeaveRequests(role: string, departmentCode?: string): boolean {
+  if (role === 'superadmin') return true
+  if (departmentCode?.toLowerCase() === 'hr') return true
+  if (role === 'manager') return true
+  return false
+}
+
+/**
+ * Check if user can approve leave requests
+ * Note: This is a basic check. Actual approval requires checking manager relationship in server action
+ */
+export function canApproveLeaveRequests(role: string, departmentCode?: string): boolean {
+  if (role === 'superadmin') return true
+  if (departmentCode?.toLowerCase() === 'hr') return true
+  if (role === 'manager') return true
+  return false
+}
+
+/**
+ * Check if user can edit a leave request
+ */
+export function canEditLeaveRequest(
+  userId: string,
+  leaveRequestUserId: string,
+  leaveRequestStatus: string
+): boolean {
+  // Only creator can edit
+  if (userId !== leaveRequestUserId) return false
+  // Only pending requests can be edited
+  if (leaveRequestStatus !== 'pending') return false
+  return true
 }
 

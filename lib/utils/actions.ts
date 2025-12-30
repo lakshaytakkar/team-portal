@@ -24,6 +24,7 @@ import {
   canViewAllUsers,
   canViewAllCalls,
   canViewTeamAttendance,
+  canApproveLeaveRequests,
   type Role,
 } from './permissions'
 
@@ -105,6 +106,8 @@ export function getRowActions(context: RowActionContext): Action[] {
       return getCallRowActions(context)
     case 'attendance':
       return getAttendanceRowActions(context)
+    case 'leave-request':
+      return getLeaveRequestRowActions(context)
     case 'user':
       return getUserRowActions(context)
     default:
@@ -429,6 +432,75 @@ function getAttendanceRowActions(context: RowActionContext): Action[] {
   return actions
 }
 
+function getLeaveRequestRowActions(context: RowActionContext): Action[] {
+  const { entity, userRole, currentUserId, userDepartment } = context
+  const actions: Action[] = []
+
+  // View Details
+  actions.push({
+    id: 'view',
+    type: 'view',
+    label: 'View Details',
+    onClick: () => {
+      // Show leave request detail - handled by component
+    },
+  })
+
+  // Edit (creator only, pending only)
+  if (entity.userId === currentUserId && entity.status === 'pending') {
+    actions.push({
+      id: 'edit',
+      type: 'edit',
+      label: 'Edit',
+      onClick: () => {
+        // Open edit dialog - handled by component
+      },
+    })
+  }
+
+  // Cancel (creator only, pending only)
+  if (entity.userId === currentUserId && entity.status === 'pending') {
+    actions.push({
+      id: 'cancel',
+      type: 'cancel',
+      label: 'Cancel',
+      variant: 'destructive',
+      requiresConfirmation: true,
+      confirmationMessage: 'Are you sure you want to cancel this leave request?',
+      onClick: () => {
+        // Cancel leave request - handled by component
+      },
+    })
+  }
+
+  // Approve (manager/HR/superadmin, pending only)
+  if (canApproveLeaveRequests(userRole, userDepartment) && entity.status === 'pending') {
+    actions.push({
+      id: 'approve',
+      type: 'update-status',
+      label: 'Approve',
+      onClick: () => {
+        // Open approval dialog - handled by component
+      },
+    })
+  }
+
+  // Reject (manager/HR/superadmin, pending only)
+  if (canApproveLeaveRequests(userRole, userDepartment) && entity.status === 'pending') {
+    actions.push({
+      id: 'reject',
+      type: 'update-status',
+      label: 'Reject',
+      variant: 'destructive',
+      onClick: () => {
+        // Open rejection dialog - handled by component
+      },
+    })
+  }
+
+  return actions
+}
+
 function getUserRowActions(context: RowActionContext): Action[] {
   const { entity, userRole, currentUserId } = context
   const actions: Action[] = []
@@ -541,6 +613,8 @@ export function getTopbarActions(context: TopbarActionContext): {
     return getCallsTopbarActions(context)
   } else if (page.includes('/my-attendance') || page.includes('/attendance')) {
     return getAttendanceTopbarActions(context)
+  } else if (page.includes('/my-leave-requests')) {
+    return getLeaveRequestsTopbarActions(context)
   } else if (page.includes('/admin/users')) {
     return getUsersTopbarActions(context)
   } else if (page.includes('/recruitment/job-listings')) {
@@ -768,6 +842,34 @@ function getAttendanceTopbarActions(context: TopbarActionContext) {
       },
     })
   }
+
+  return { primary, secondary }
+}
+
+function getLeaveRequestsTopbarActions(context: TopbarActionContext) {
+  const { userRole } = context
+  const primary: Action[] = []
+  const secondary: Action[] = []
+
+  // Primary: Request Leave
+  primary.push({
+    id: 'request-leave',
+    type: 'create',
+    label: 'Request Leave',
+    onClick: () => {
+      // Open request leave dialog - handled by component
+    },
+  })
+
+  // Secondary: Export
+  secondary.push({
+    id: 'export',
+    type: 'export',
+    label: 'Export to CSV',
+    onClick: () => {
+      // Trigger export - handled by component
+    },
+  })
 
   return { primary, secondary }
 }

@@ -88,12 +88,14 @@ export default function MarketingEmailAutomationsPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-foreground leading-[1.35]">Email Automations</h1>
-          <p className="text-sm text-muted-foreground mt-1">Create automated email workflows triggered by lead events</p>
-        </div>
-        <Button onClick={() => setIsCreateAutomationOpen(true)}>
+      {/* Header */}
+      <div className="bg-primary/85 text-primary-foreground rounded-md px-4 py-3 flex-shrink-0 w-full">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <h1 className="text-lg font-semibold tracking-tight text-white">Email Automations</h1>
+            <p className="text-xs text-white/90 mt-0.5">Create automated email workflows triggered by lead events</p>
+          </div>
+          <Button onClick={() => setIsCreateAutomationOpen(true)} variant="secondary" size="sm">
           <Plus className="h-4 w-4 mr-2" />
           New Automation
         </Button>

@@ -17,9 +17,10 @@ interface BreadcrumbItem {
 
 interface DevTopbarProps {
   breadcrumbs?: BreadcrumbItem[]
+  isFilterHeaderCollapsed?: boolean
 }
 
-export function DevTopbar({ breadcrumbs }: DevTopbarProps) {
+export function DevTopbar({ breadcrumbs, isFilterHeaderCollapsed = true }: DevTopbarProps) {
   const pathname = usePathname()
   
   const getBreadcrumbs = (): BreadcrumbItem[] => {
@@ -56,7 +57,7 @@ export function DevTopbar({ breadcrumbs }: DevTopbarProps) {
   const computedBreadcrumbs = getBreadcrumbs()
 
   return (
-    <div className="fixed top-0 right-0 left-[272px] h-[72px] border-b border-border bg-background/80 backdrop-blur-md flex items-center justify-between px-8 py-4 z-30">
+    <div className={`fixed ${isFilterHeaderCollapsed ? 'top-0' : 'top-[48px]'} right-0 left-[272px] h-[72px] border-b border-border bg-background/80 backdrop-blur-md flex items-center justify-between px-8 py-4 z-30 transition-all duration-300`}>
       {/* Breadcrumbs */}
       <div className="flex items-center gap-2.5 text-sm font-medium">
         {computedBreadcrumbs.map((crumb, index) => (

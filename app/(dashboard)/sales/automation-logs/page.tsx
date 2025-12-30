@@ -94,17 +94,22 @@ function AutomationLogsContent() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-foreground leading-[1.35]">
-            {isMyView ? "My Automation Logs" : "Automation Logs"}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {isMyView
-              ? "View your automation activity and responses"
-              : "View team automation activity and responses"}
-          </p>
+      {/* Header */}
+      <div className="bg-primary/85 text-primary-foreground rounded-md px-4 py-3 flex-shrink-0 w-full">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <h1 className="text-lg font-semibold tracking-tight text-white">
+              {isMyView ? "My Automation Logs" : "Automation Logs"}
+            </h1>
+            <p className="text-xs text-white/90 mt-0.5">
+              {isMyView
+                ? "View your automation activity and responses"
+                : "View team automation activity and responses"}
+            </p>
+          </div>
         </div>
+      </div>
+      <div className="flex items-center justify-end">
         <Button variant="outline" size="default" className="gap-2">
           <FileDown className="h-4 w-4" />
           Export

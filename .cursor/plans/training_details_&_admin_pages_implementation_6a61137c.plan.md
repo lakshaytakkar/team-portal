@@ -13,37 +13,37 @@ todos:
     status: completed
   - id: training-detail-page
     content: Replace modal-based training detail page with full-page video layout
-    status: in_progress
+    status: completed
   - id: user-types
     content: Create AdminUser type and related types in lib/types/admin.ts
-    status: pending
+    status: completed
   - id: user-table
     content: Build UsersTable component with columns, sorting, filtering
-    status: pending
+    status: completed
   - id: user-columns
     content: Create UserColumns component with action handlers
-    status: pending
+    status: completed
   - id: user-forms
     content: Enhance CreateUserDialog and add EditUserDialog with validation
-    status: pending
+    status: completed
   - id: user-bulk-actions
     content: Implement bulk actions (delete, suspend, activate) for selected users
-    status: pending
+    status: completed
   - id: permission-types
     content: Define Permission, ModulePermissionGroup, RolePermissions types
-    status: pending
+    status: completed
   - id: permission-data
     content: Create permission definitions data structure
-    status: pending
+    status: completed
   - id: permission-matrix
     content: Build PermissionsMatrix component with role tabs and search
-    status: pending
+    status: completed
   - id: permission-card
     content: Create PermissionCard component for individual modules
-    status: pending
+    status: completed
   - id: permission-page
     content: Implement admin/permissions page with full matrix interface
-    status: pending
+    status: completed
 ---
 
 # Training De
@@ -346,4 +346,3 @@ All pages should:
 
 - Training page: Focus on video-only experience, simple flat list
 - User management: Comprehensive CRUD operations with proper validation
-- Permission matrix: Grid-based visual permission management

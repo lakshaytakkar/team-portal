@@ -2,22 +2,21 @@
   "permissions": {
     "allow": [
       "Bash(git add:*)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: Add Kanban project board and workspace navigation\n\nRefactor projects page from task table to Kanban board view with\nstatus columns \\(Not Started, In Progress, Completed, On Hold\\).\nAdd My Workspace section to sidebar with My Projects and My Tasks\nnavigation. Include project detail pages, avatar utilities, and\nupdated UI components.\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(bun add:*)",
       "Bash(bunx supabase:*)",
       "Bash(./node_modules/.bin/supabase login:*)",
-      "Bash(dir node_modules.binsupabase*)",
       "Bash(node node_modules/supabase/scripts/postinstall.js:*)",
       "Bash(node scripts/postinstall.js:*)",
       "Bash(npm install:*)",
       "Bash(npx supabase login:*)",
       "Bash(npx drizzle-kit:*)",
-      "Bash(nslookup:*)",
       "Bash(npx supabase:*)",
-      "Bash(SUPABASE_DB_PASSWORD=nhR1zvWXYCdjxG4p npx supabase db pull:*)",
-      "Bash(cat:*)"
+      "mcp__supabase__list_tables",
+      "mcp__supabase__execute_sql",
+      "mcp__supabase__get_logs",
+      "mcp__supabase__apply_migration"
     ]
   }
 }

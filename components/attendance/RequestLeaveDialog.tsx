@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import { toast } from "@/components/ui/sonner"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -9,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { createLeaveRequest } from "@/lib/actions/leave-requests"
 
 interface RequestLeaveDialogProps {
   open: boolean
@@ -16,31 +18,56 @@ interface RequestLeaveDialogProps {
 }
 
 export function RequestLeaveDialog({ open, onOpenChange }: RequestLeaveDialogProps) {
+  const queryClient = useQueryClient()
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     leaveType: "",
     startDate: "",
     endDate: "",
     reason: "",
-    documents: "",
+    documents: [] as File[],
     coveragePlan: "",
     contactDuringLeave: "",
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!formData.leaveType || !formData.startDate || !formData.endDate || !formData.reason) {
+      toast.error("Please fill in all required fields")
+      return
+    }
+
+    setIsSubmitting(true)
     try {
-      console.log("Request leave:", formData)
+      // TODO: Handle file uploads for documents (store URLs)
+      const documentUrls: string[] = [] // Placeholder for uploaded document URLs
+
+      await createLeaveRequest({
+        type: formData.leaveType as "vacation" | "sick" | "personal" | "other",
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        reason: formData.reason,
+        coveragePlan: formData.coveragePlan || undefined,
+        contactDuringLeave: formData.contactDuringLeave || undefined,
+        documents: documentUrls.length > 0 ? documentUrls : undefined,
+      })
+
       toast.success("Leave request submitted successfully", {
         description: "Your leave request has been submitted for approval",
         duration: 3000,
       })
+      
+      // Invalidate and refetch leave requests
+      queryClient.invalidateQueries({ queryKey: ["leave-requests"] })
+      
       onOpenChange(false)
       setFormData({
         leaveType: "",
         startDate: "",
         endDate: "",
         reason: "",
-        documents: "",
+        documents: [],
         coveragePlan: "",
         contactDuringLeave: "",
       })
@@ -50,6 +77,8 @@ export function RequestLeaveDialog({ open, onOpenChange }: RequestLeaveDialogPro
         description: error instanceof Error ? error.message : "An error occurred. Please try again.",
         duration: 5000,
       })
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -89,8 +118,6 @@ export function RequestLeaveDialog({ open, onOpenChange }: RequestLeaveDialogPro
                   <SelectItem value="sick">Sick Leave</SelectItem>
                   <SelectItem value="vacation">Vacation</SelectItem>
                   <SelectItem value="personal">Personal</SelectItem>
-                  <SelectItem value="bereavement">Bereavement</SelectItem>
-                  <SelectItem value="maternity">Maternity/Paternity</SelectItem>
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
@@ -148,7 +175,10 @@ export function RequestLeaveDialog({ open, onOpenChange }: RequestLeaveDialogPro
                     <Input
                       type="file"
                       multiple
-                      onChange={(e) => setFormData({ ...formData, documents: e.target.files?.length?.toString() || "" })}
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files || [])
+                        setFormData({ ...formData, documents: files })
+                      }}
                       className="h-[52px] rounded-xl border-[#dfe1e7] text-base tracking-[0.32px]"
                     />
                   </div>
@@ -195,8 +225,9 @@ export function RequestLeaveDialog({ open, onOpenChange }: RequestLeaveDialogPro
               type="submit"
               size="md"
               className="w-[128px]"
+              disabled={isSubmitting}
             >
-              Submit Request
+              {isSubmitting ? "Submitting..." : "Submit Request"}
             </Button>
           </div>
         </form>
@@ -204,5 +235,6 @@ export function RequestLeaveDialog({ open, onOpenChange }: RequestLeaveDialogPro
     </Dialog>
   )
 }
+
 
 

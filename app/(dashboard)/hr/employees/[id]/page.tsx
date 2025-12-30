@@ -11,11 +11,14 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Mail, Phone, Briefcase, Building2, Calendar, User, Users, Edit } from "lucide-react"
 import { Employee, EmployeeStatus } from "@/lib/types/hr"
-import { getEmployeeById, getEmployees } from "@/lib/actions/hr"
+import { getEmployeeById, getEmployees, getPositions } from "@/lib/actions/hr"
 import { ErrorState } from "@/components/ui/error-state"
 import { DetailPageHeader, DetailQuickTile, DetailTabs } from "@/components/details"
 import { useDetailNavigation } from "@/lib/hooks/useDetailNavigation"
 import { getAvatarForUser } from "@/lib/utils/avatars"
+import { EmployeePositions } from "@/components/hr/EmployeePositions"
+import { EmployeeDocuments } from "@/components/hr/EmployeeDocuments"
+import { EmployeeAssets } from "@/components/hr/EmployeeAssets"
 
 const statusConfig: Record<EmployeeStatus, { label: string; variant: "default" | "secondary" | "outline" }> = {
   active: { label: "Active", variant: "default" },
@@ -49,15 +52,13 @@ export default function EmployeeDetailPage() {
     queryFn: fetchAllEmployees,
   })
 
-  // Handle 404 for missing employees
+  // Handle 404 for missing employees - less aggressive
   useEffect(() => {
-    if (error && error instanceof Error && error.message.toLowerCase().includes("not found")) {
-      notFound()
-    }
+    // Only log warning, don't call notFound immediately
     if (!isLoading && !error && !employee) {
-      notFound()
+      console.warn('Employee not found:', employeeId)
     }
-  }, [error, isLoading, employee])
+  }, [error, isLoading, employee, employeeId])
 
   const navigation = useDetailNavigation({
     currentId: employeeId,
@@ -83,12 +84,22 @@ export default function EmployeeDetailPage() {
     )
   }
 
-  if (error && (!(error instanceof Error) || !error.message.toLowerCase().includes("not found"))) {
+  if (error) {
     return (
       <ErrorState
         title="Failed to load employee"
         message="We couldn't load this employee. Please check your connection and try again."
         onRetry={() => refetch()}
+      />
+    )
+  }
+
+  if (!isLoading && !employee) {
+    return (
+      <ErrorState
+        title="Employee Not Found"
+        message={`The employee with ID "${employeeId}" could not be found. They may have been deleted or moved.`}
+        onRetry={() => router.push("/hr/employees")}
       />
     )
   }
@@ -142,7 +153,9 @@ export default function EmployeeDetailPage() {
                   <h3 className="text-sm font-semibold text-foreground mb-2">Position</h3>
                   <div className="flex items-center gap-2">
                     <Briefcase className="h-4 w-4 text-muted-foreground" />
-                    <p className="text-sm text-foreground font-medium">{employee.position}</p>
+                    <p className="text-sm text-foreground font-medium">
+                      {employee.primaryPosition?.role?.name || employee.role?.name || employee.position}
+                    </p>
                   </div>
                 </div>
                 <div>
@@ -150,10 +163,32 @@ export default function EmployeeDetailPage() {
                   <div className="flex items-center gap-2">
                     <Building2 className="h-4 w-4 text-muted-foreground" />
                     <Badge variant="primary" className="h-6 px-2.5 py-0.5 rounded-2xl text-sm font-medium">
-                      {employee.department}
+                      {employee.primaryPosition?.team?.department?.name || employee.team?.department?.name || employee.department}
                     </Badge>
                   </div>
                 </div>
+                {employee.primaryPosition?.team?.vertical && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground mb-2">Vertical</h3>
+                    <div className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4 text-muted-foreground" />
+                      <Badge variant="secondary" className="h-6 px-2.5 py-0.5 rounded-2xl text-sm font-medium">
+                        {employee.primaryPosition.team.vertical.name}
+                      </Badge>
+                    </div>
+                  </div>
+                )}
+                {employee.primaryPosition?.team && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground mb-2">Team</h3>
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <Badge variant="outline" className="h-6 px-2.5 py-0.5 rounded-2xl text-sm font-medium">
+                        {employee.primaryPosition.team.name}
+                      </Badge>
+                    </div>
+                  </div>
+                )}
                 <div>
                   <h3 className="text-sm font-semibold text-foreground mb-2">Status</h3>
                   <Badge variant={statusBadge.variant} className="h-6 px-2.5 py-0.5 rounded-2xl text-sm font-medium">
@@ -203,6 +238,33 @@ export default function EmployeeDetailPage() {
               )}
             </CardContent>
           </Card>
+        </div>
+      ),
+    },
+    {
+      id: "positions",
+      label: "Positions",
+      content: (
+        <div className="space-y-6">
+          <EmployeePositions employeeId={employeeId} />
+        </div>
+      ),
+    },
+    {
+      id: "documents",
+      label: "Documents",
+      content: (
+        <div className="space-y-6">
+          <EmployeeDocuments employeeId={employeeId} />
+        </div>
+      ),
+    },
+    {
+      id: "assets",
+      label: "Assigned Assets",
+      content: (
+        <div className="space-y-6">
+          <EmployeeAssets employeeId={employeeId} />
         </div>
       ),
     },

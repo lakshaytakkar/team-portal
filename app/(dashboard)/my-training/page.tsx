@@ -31,8 +31,9 @@ export default function MyTrainingPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
 
   const { data: trainings, isLoading, error, refetch } = useQuery({
-    queryKey: ["trainings"],
+    queryKey: ["trainings", "v2"],
     queryFn: fetchTrainings,
+    staleTime: 0,
   })
 
   if (isLoading) {
@@ -83,9 +84,14 @@ export default function MyTrainingPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-semibold text-foreground leading-[1.35]">My Training</h1>
-        <p className="text-sm text-muted-foreground mt-1">Access your training courses and resources</p>
+      {/* Header */}
+      <div className="bg-primary/85 text-primary-foreground rounded-md px-4 py-3 flex-shrink-0 w-full">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <h1 className="text-lg font-semibold tracking-tight text-white">My Training</h1>
+            <p className="text-xs text-white/90 mt-0.5">Access your training courses and resources</p>
+          </div>
+        </div>
       </div>
 
       <Card className="border border-border rounded-[14px]">

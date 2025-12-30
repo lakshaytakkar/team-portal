@@ -1,7 +1,9 @@
 "use client"
 
 import { useState } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import { toast } from "@/components/ui/sonner"
+import { createLeaveRequest } from "@/lib/actions/leave-requests"
 import {
   Sheet,
   SheetContent,
@@ -31,31 +33,56 @@ interface RequestLeaveDrawerProps {
 }
 
 export function RequestLeaveDrawer({ open, onOpenChange }: RequestLeaveDrawerProps) {
+  const queryClient = useQueryClient()
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     leaveType: "",
     startDate: "",
     endDate: "",
     reason: "",
-    documents: "",
+    documents: [] as File[],
     coveragePlan: "",
     contactDuringLeave: "",
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!formData.leaveType || !formData.startDate || !formData.endDate || !formData.reason) {
+      toast.error("Please fill in all required fields")
+      return
+    }
+
+    setIsSubmitting(true)
     try {
-      console.log("Request leave:", formData)
+      // TODO: Handle file uploads for documents (store URLs)
+      const documentUrls: string[] = [] // Placeholder for uploaded document URLs
+
+      await createLeaveRequest({
+        type: formData.leaveType as "vacation" | "sick" | "personal" | "other",
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        reason: formData.reason,
+        coveragePlan: formData.coveragePlan || undefined,
+        contactDuringLeave: formData.contactDuringLeave || undefined,
+        documents: documentUrls.length > 0 ? documentUrls : undefined,
+      })
+
       toast.success("Leave request submitted successfully", {
         description: "Your leave request has been submitted for approval",
         duration: 3000,
       })
+      
+      // Invalidate and refetch leave requests
+      queryClient.invalidateQueries({ queryKey: ["leave-requests"] })
+      
       onOpenChange(false)
       setFormData({
         leaveType: "",
         startDate: "",
         endDate: "",
         reason: "",
-        documents: "",
+        documents: [],
         coveragePlan: "",
         contactDuringLeave: "",
       })
@@ -65,6 +92,8 @@ export function RequestLeaveDrawer({ open, onOpenChange }: RequestLeaveDrawerPro
         description: error instanceof Error ? error.message : "An error occurred. Please try again.",
         duration: 5000,
       })
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -122,8 +151,6 @@ export function RequestLeaveDrawer({ open, onOpenChange }: RequestLeaveDrawerPro
                   <SelectItem value="sick">Sick Leave</SelectItem>
                   <SelectItem value="vacation">Vacation</SelectItem>
                   <SelectItem value="personal">Personal</SelectItem>
-                  <SelectItem value="bereavement">Bereavement</SelectItem>
-                  <SelectItem value="maternity">Maternity/Paternity</SelectItem>
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
@@ -186,7 +213,10 @@ export function RequestLeaveDrawer({ open, onOpenChange }: RequestLeaveDrawerPro
                     <Input
                       type="file"
                       multiple
-                      onChange={(e) => setFormData({ ...formData, documents: e.target.files?.length?.toString() || "" })}
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files || [])
+                        setFormData({ ...formData, documents: files })
+                      }}
                       className="h-[52px] rounded-xl border-[#dfe1e7] text-base tracking-[0.32px]"
                     />
                   </div>
@@ -236,8 +266,9 @@ export function RequestLeaveDrawer({ open, onOpenChange }: RequestLeaveDrawerPro
               type="submit"
               size="md"
               className="w-[128px]"
+              disabled={isSubmitting}
             >
-              Submit Request
+              {isSubmitting ? "Submitting..." : "Submit Request"}
             </Button>
           </div>
         </form>

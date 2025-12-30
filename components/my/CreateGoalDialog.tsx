@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import { toast } from "@/components/ui/sonner"
 import {
   Dialog,
@@ -14,6 +15,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { createGoal } from "@/lib/actions/goals"
+import type { GoalStatus, GoalPriority } from "@/lib/types/goal"
 
 interface CreateGoalDialogProps {
   open: boolean
@@ -21,20 +24,38 @@ interface CreateGoalDialogProps {
 }
 
 export function CreateGoalDialog({ open, onOpenChange }: CreateGoalDialogProps) {
+  const queryClient = useQueryClient()
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
-    goalTitle: "", targetDate: "", category: "",
-    description: "", milestones: "", metrics: "", relatedProjects: "",
+    goalTitle: "", targetDate: "", status: "not-started" as GoalStatus, priority: "medium" as GoalPriority,
+    description: "",
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!formData.goalTitle) {
+      toast.error("Goal title is required")
+      return
+    }
+    
+    setIsSubmitting(true)
     try {
-      console.log("Create goal:", formData)
+      await createGoal({
+        title: formData.goalTitle,
+        description: formData.description || undefined,
+        status: formData.status,
+        priority: formData.priority,
+        targetDate: formData.targetDate || undefined,
+      })
+      
       toast.success("Goal created successfully", { description: `Goal **${formData.goalTitle}** has been created`, duration: 3000 })
+      queryClient.invalidateQueries({ queryKey: ["goals"] })
       onOpenChange(false)
-      setFormData({ goalTitle: "", targetDate: "", category: "", description: "", milestones: "", metrics: "", relatedProjects: "" })
+      setFormData({ goalTitle: "", targetDate: "", status: "not-started", priority: "medium", description: "" })
     } catch (error) {
       toast.error("Failed to create goal", { description: error instanceof Error ? error.message : "An error occurred", duration: 5000 })
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -75,64 +96,47 @@ export function CreateGoalDialog({ open, onOpenChange }: CreateGoalDialogProps) 
 
             <div className="space-y-2">
               <Label className="text-sm font-medium text-[#666d80] leading-[1.5] tracking-[0.28px]">
-                Category <span className="text-[#df1c41]">*</span>
+                Status <span className="text-[#df1c41]">*</span>
               </Label>
-              <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+              <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value as GoalStatus })}>
                 <SelectTrigger className="h-[52px] rounded-xl border-[#dfe1e7] text-base tracking-[0.32px]">
-                  <SelectValue placeholder="Select category" />
+                  <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="personal">Personal</SelectItem>
-                  <SelectItem value="professional">Professional</SelectItem>
-                  <SelectItem value="team">Team</SelectItem>
-                  <SelectItem value="company">Company</SelectItem>
+                  <SelectItem value="not-started">Not Started</SelectItem>
+                  <SelectItem value="in-progress">In Progress</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="on-hold">On Hold</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            <Accordion type="single" collapsible className="w-full">
-              <AccordionItem value="additional">
-                <AccordionTrigger className="text-sm font-medium text-[#666d80]">Additional Information</AccordionTrigger>
-                <AccordionContent className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-[#666d80] leading-[1.5] tracking-[0.28px]">Description</Label>
-                    <Textarea
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      placeholder="Enter description"
-                      className="min-h-[100px] rounded-xl border-[#dfe1e7] text-base tracking-[0.32px] resize-none placeholder:text-[#a4acb9]"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-[#666d80] leading-[1.5] tracking-[0.28px]">Milestones</Label>
-                    <Textarea
-                      value={formData.milestones}
-                      onChange={(e) => setFormData({ ...formData, milestones: e.target.value })}
-                      placeholder="Enter milestones"
-                      className="min-h-[100px] rounded-xl border-[#dfe1e7] text-base tracking-[0.32px] resize-none placeholder:text-[#a4acb9]"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-[#666d80] leading-[1.5] tracking-[0.28px]">Metrics</Label>
-                    <Input
-                      value={formData.metrics}
-                      onChange={(e) => setFormData({ ...formData, metrics: e.target.value })}
-                      placeholder="Enter success metrics"
-                      className="h-[52px] rounded-xl border-[#dfe1e7] text-base tracking-[0.32px] placeholder:text-[#818898]"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-[#666d80] leading-[1.5] tracking-[0.28px]">Related Projects</Label>
-                    <Input
-                      value={formData.relatedProjects}
-                      onChange={(e) => setFormData({ ...formData, relatedProjects: e.target.value })}
-                      placeholder="Enter related projects"
-                      className="h-[52px] rounded-xl border-[#dfe1e7] text-base tracking-[0.32px] placeholder:text-[#818898]"
-                    />
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-[#666d80] leading-[1.5] tracking-[0.28px]">
+                Priority <span className="text-[#df1c41]">*</span>
+              </Label>
+              <Select value={formData.priority} onValueChange={(value) => setFormData({ ...formData, priority: value as GoalPriority })}>
+                <SelectTrigger className="h-[52px] rounded-xl border-[#dfe1e7] text-base tracking-[0.32px]">
+                  <SelectValue placeholder="Select priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-[#666d80] leading-[1.5] tracking-[0.28px]">Description</Label>
+              <Textarea
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Enter description"
+                className="min-h-[100px] rounded-xl border-[#dfe1e7] text-base tracking-[0.32px] resize-none placeholder:text-[#a4acb9]"
+              />
+            </div>
           </div>
 
           <div className="flex items-center justify-end gap-3.5 pt-4 px-6 pb-6 flex-shrink-0 border-t">
@@ -142,6 +146,7 @@ export function CreateGoalDialog({ open, onOpenChange }: CreateGoalDialogProps) 
               variant="outline"
               size="md"
               className="w-[128px]"
+              disabled={isSubmitting}
             >
               Cancel
             </Button>
@@ -149,8 +154,9 @@ export function CreateGoalDialog({ open, onOpenChange }: CreateGoalDialogProps) 
               type="submit"
               size="md"
               className="w-[128px]"
+              disabled={isSubmitting}
             >
-              Create Goal
+              {isSubmitting ? "Creating..." : "Create Goal"}
             </Button>
           </div>
         </form>

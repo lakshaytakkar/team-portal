@@ -23,8 +23,10 @@ export function TrainingVideoPlayer({ video, onVideoEnd }: TrainingVideoPlayerPr
   const [isMuted, setIsMuted] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [showControls, setShowControls] = useState(true)
+  const [hasError, setHasError] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  // Update current time
+  // Update current time and handle errors
   useEffect(() => {
     const videoElement = videoRef.current
     if (!videoElement) return
@@ -39,12 +41,41 @@ export function TrainingVideoPlayer({ video, onVideoEnd }: TrainingVideoPlayerPr
         onVideoEnd()
       }
     }
+    const handleError = (e: Event) => {
+      setHasError(true)
+      const error = videoElement.error
+      if (error) {
+        switch (error.code) {
+          case error.MEDIA_ERR_ABORTED:
+            setErrorMessage("Video playback was aborted")
+            break
+          case error.MEDIA_ERR_NETWORK:
+            setErrorMessage("Network error while loading video")
+            break
+          case error.MEDIA_ERR_DECODE:
+            setErrorMessage("Video format not supported or corrupted")
+            break
+          case error.MEDIA_ERR_SRC_NOT_SUPPORTED:
+            setErrorMessage("Video source not supported or invalid URL")
+            break
+          default:
+            setErrorMessage("Unable to load video. Please check the video URL.")
+        }
+      } else {
+        setErrorMessage("Unable to load video. Please check the video URL.")
+      }
+    }
+
+    // Reset error state when video changes
+    setHasError(false)
+    setErrorMessage(null)
 
     videoElement.addEventListener("timeupdate", updateTime)
     videoElement.addEventListener("loadedmetadata", updateDuration)
     videoElement.addEventListener("play", handlePlay)
     videoElement.addEventListener("pause", handlePause)
     videoElement.addEventListener("ended", handleEnded)
+    videoElement.addEventListener("error", handleError)
 
     return () => {
       videoElement.removeEventListener("timeupdate", updateTime)
@@ -52,6 +83,7 @@ export function TrainingVideoPlayer({ video, onVideoEnd }: TrainingVideoPlayerPr
       videoElement.removeEventListener("play", handlePlay)
       videoElement.removeEventListener("pause", handlePause)
       videoElement.removeEventListener("ended", handleEnded)
+      videoElement.removeEventListener("error", handleError)
     }
   }, [video, onVideoEnd])
 
@@ -141,6 +173,31 @@ export function TrainingVideoPlayer({ video, onVideoEnd }: TrainingVideoPlayerPr
     return `${mins}:${secs.toString().padStart(2, "0")}`
   }
 
+  // Check if URL is a YouTube URL and convert to embed format
+  const getYouTubeEmbedUrl = (url: string): string | null => {
+    // Match various YouTube URL formats
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
+      /youtube\.com\/watch\?.*v=([^&\n?#]+)/,
+    ]
+
+    for (const pattern of patterns) {
+      const match = url.match(pattern)
+      if (match && match[1]) {
+        return `https://www.youtube.com/embed/${match[1]}`
+      }
+    }
+
+    return null
+  }
+
+  const isYouTubeUrl = (url: string): boolean => {
+    return /youtube\.com|youtu\.be/.test(url)
+  }
+
+  const youtubeEmbedUrl = video.url ? getYouTubeEmbedUrl(video.url) : null
+  const isYouTube = video.url ? isYouTubeUrl(video.url) : false
+
   if (!video.url) {
     return (
       <div className="w-full aspect-video bg-black rounded-[14px] flex items-center justify-center">
@@ -152,6 +209,38 @@ export function TrainingVideoPlayer({ video, onVideoEnd }: TrainingVideoPlayerPr
     )
   }
 
+  // Show error state if video failed to load (only for non-YouTube videos)
+  if (hasError && !isYouTube) {
+    return (
+      <div className="w-full aspect-video bg-black rounded-[14px] flex items-center justify-center">
+        <div className="text-center px-4">
+          <p className="text-white mb-2 font-medium">Unable to load video</p>
+          <p className="text-white/70 text-sm mb-4">{errorMessage || "The video source is invalid or not supported"}</p>
+          <p className="text-white/50 text-xs">URL: {video.url}</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Render YouTube embed if it's a YouTube URL
+  if (isYouTube && youtubeEmbedUrl) {
+    return (
+      <div
+        ref={containerRef}
+        className="relative w-full aspect-video bg-black rounded-[14px] overflow-hidden"
+      >
+        <iframe
+          src={`${youtubeEmbedUrl}?autoplay=0&rel=0&modestbranding=1`}
+          className="w-full h-full"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          title={video.title || "YouTube video player"}
+        />
+      </div>
+    )
+  }
+
+  // Render regular video player for non-YouTube videos
   return (
     <div
       ref={containerRef}
@@ -160,7 +249,13 @@ export function TrainingVideoPlayer({ video, onVideoEnd }: TrainingVideoPlayerPr
       onMouseLeave={() => setShowControls(false)}
       onMouseMove={() => setShowControls(true)}
     >
-      <video ref={videoRef} src={video.url} className="w-full h-full object-contain" onClick={togglePlay} />
+      <video 
+        ref={videoRef} 
+        src={video.url} 
+        className="w-full h-full object-contain" 
+        onClick={togglePlay}
+        preload="metadata"
+      />
 
       {/* Controls Overlay */}
       {showControls && (
@@ -209,4 +304,5 @@ export function TrainingVideoPlayer({ video, onVideoEnd }: TrainingVideoPlayerPr
     </div>
   )
 }
+
 

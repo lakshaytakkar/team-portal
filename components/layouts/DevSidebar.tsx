@@ -65,7 +65,11 @@ const sectionLabels: Record<string, string> = {
   docs: "DOCUMENTATION",
 }
 
-export function DevSidebar() {
+interface DevSidebarProps {
+  isFilterHeaderCollapsed?: boolean
+}
+
+export function DevSidebar({ isFilterHeaderCollapsed = true }: DevSidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [isCollapsed, setIsCollapsed] = React.useState(false)
@@ -87,7 +91,7 @@ export function DevSidebar() {
   const sections = ["dashboard", "management", "design", "resources", "docs"] as const
 
   return (
-    <div className="fixed left-0 top-0 bottom-0 w-[272px] bg-background flex flex-col py-6 z-40 border-r border-border">
+    <div className={`fixed left-0 ${isFilterHeaderCollapsed ? 'top-0' : 'top-[48px]'} bottom-0 w-[272px] bg-background flex flex-col py-6 z-40 border-r border-border transition-all duration-300`}>
       {/* Header */}
       <div className="flex flex-col h-16 items-start justify-center px-4 shrink-0 w-full mb-4">
         <div className="flex h-14 items-center px-2 w-full">

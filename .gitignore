@@ -40,4 +40,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-.vercel
+# IDE configs
+.cursor/
+.claude/
+
+# Temp files
+temp-*.txt
+nul

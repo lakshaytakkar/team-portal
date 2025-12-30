@@ -2,6 +2,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState, useMemo } from "react"
+import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -18,7 +19,6 @@ import {
   CheckCircle2,
 } from "lucide-react"
 import { Project, ProjectStatus } from "@/lib/types/project"
-import { initialProjects } from "@/lib/data/projects"
 import { cn } from "@/lib/utils"
 import { getAvatarForUser } from "@/lib/utils/avatars"
 import { CreateProjectDialog } from "@/components/projects/CreateProjectDialog"
@@ -29,6 +29,8 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { SearchNoResults } from "@/components/ui/search-no-results"
 import { FolderOpen } from "lucide-react"
 import { KanbanBoard, KanbanColumn } from "@/components/kanban/KanbanBoard"
+import { getProjects, deleteProject, updateProject } from "@/lib/actions/projects"
+import { toast } from "@/components/ui/sonner"
 
 // Map project status to Kanban column
 const statusToColumn: Record<ProjectStatus, "not-started" | "in-progress" | "completed" | "on-hold"> = {
@@ -85,9 +87,7 @@ const columns = [
 ]
 
 async function fetchProjects() {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 500))
-  return initialProjects.projects
+  return await getProjects()
 }
 
 // Project Card Component
@@ -222,10 +222,14 @@ function ProjectCard({ project, onEdit, onDelete }: { project: Project; onEdit?:
 }
 
 export default function ProjectsPage() {
+  const searchParams = useSearchParams()
+  // Initialize search query from URL parameter
+  const initialSearchQuery = searchParams.get('q') || ""
+  
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false)
   const [editingProject, setEditingProject] = useState<Project | null>(null)
-  const [searchQuery, setSearchQuery] = useState("")
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery)
   const queryClient = useQueryClient()
   const { data: projects, isLoading, error, refetch } = useQuery({
     queryKey: ["projects"],
@@ -238,14 +242,14 @@ export default function ProjectsPage() {
   }
 
   const handleDeleteProject = async (project: Project) => {
-    return new Promise<void>((resolve, reject) => {
-      // Simulate delete API call
-      setTimeout(() => {
-        console.log("Delete project:", project.id)
-        refetch()
-        resolve()
-      }, 500)
-    })
+    try {
+      await deleteProject(project.id)
+      toast.success("Project deleted successfully")
+      queryClient.invalidateQueries({ queryKey: ["projects"] })
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete project")
+      throw error
+    }
   }
 
   // Filter projects by search query (use empty array as fallback for hook consistency)
@@ -357,7 +361,7 @@ export default function ProjectsPage() {
   }
 
   // Handle project move between columns
-  const handleProjectMove = (projectId: string, newColumnId: string, oldColumnId: string) => {
+  const handleProjectMove = async (projectId: string, newColumnId: string, oldColumnId: string) => {
     if (newColumnId === oldColumnId) return
 
     const newStatus = columnToStatus[newColumnId as keyof typeof columnToStatus]
@@ -373,9 +377,14 @@ export default function ProjectsPage() {
       )
     })
 
-    // In a real app, you would make an API call here
-    // For now, we'll just update the local state
-    console.log(`Moving project ${projectId} from ${oldColumnId} to ${newColumnId} (status: ${newStatus})`)
+    try {
+      await updateProject(projectId, { status: newStatus })
+      queryClient.invalidateQueries({ queryKey: ["projects"] })
+    } catch (error) {
+      // Revert on error
+      queryClient.invalidateQueries({ queryKey: ["projects"] })
+      toast.error(error instanceof Error ? error.message : "Failed to update project status")
+    }
   }
 
   // Calculate statistics
@@ -394,14 +403,17 @@ export default function ProjectsPage() {
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-foreground leading-[1.35]">
-          Projects Overview
-        </h1>
-        <Button onClick={() => setIsDrawerOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          New Project
-        </Button>
+      <div className="bg-primary/85 text-primary-foreground rounded-md px-4 py-3 flex-shrink-0 w-full">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <h1 className="text-lg font-semibold tracking-tight text-white">Projects Overview</h1>
+            <p className="text-xs text-white/90 mt-0.5">Manage and track all projects across the organization</p>
+          </div>
+          <Button onClick={() => setIsDrawerOpen(true)} variant="secondary" size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            New Project
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -509,7 +521,6 @@ export default function ProjectsPage() {
               onClear={() => setSearchQuery("")}
             />
           ) : (
-            /* Kanban Board */
             <KanbanBoard
               columns={columnsWithProjects}
               onItemMove={handleProjectMove}

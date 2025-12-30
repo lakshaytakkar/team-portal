@@ -2,31 +2,27 @@
 
 import { useQuery } from "@tanstack/react-query"
 import { useState, useMemo, useEffect } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { notFound } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Calendar,
-  MessageSquare,
-  CheckCircle2,
-  Clock,
-  User,
   ExternalLink,
   ListTodo,
 } from "lucide-react"
 import { Task, TaskStatus, TaskPriority } from "@/lib/types/task"
-import { initialTasks } from "@/lib/data/tasks"
 import { cn } from "@/lib/utils"
 import { getAvatarForUser } from "@/lib/utils/avatars"
 import { ErrorState } from "@/components/ui/error-state"
 import { DetailPageHeader, DetailQuickTile, DetailTabs } from "@/components/details"
 import { useDetailNavigation } from "@/lib/hooks/useDetailNavigation"
+import { getTaskTreeById, getTasks } from "@/lib/actions/tasks"
+import { TaskAttachmentsTab } from "@/components/tasks/TaskAttachmentsTab"
+import { TaskSubtasksTab } from "@/components/tasks/TaskSubtasksTab"
+import { EditTaskDialog } from "@/components/tasks/EditTaskDialog"
 
 // Status badge config
 const statusConfig: Record<TaskStatus, { label: string; variant: "neutral-outline" | "primary-outline" | "yellow-outline" | "green-outline" | "red-outline" }> = {
@@ -46,31 +42,18 @@ const priorityConfig: Record<TaskPriority, { label: string; variant: "neutral" |
 }
 
 // Flatten all tasks for navigation
-function flattenTasks(tasks: any[]): Task[] {
+function flattenTasks(tasks: Task[]): Task[] {
   const allTasks: Task[] = []
-  const flatten = (taskList: any[]) => {
+  const flatten = (taskList: Task[]) => {
     taskList.forEach((task) => {
       allTasks.push(task)
-      if (task.subtasks) {
+      if ("subtasks" in task && task.subtasks) {
         flatten(task.subtasks)
       }
     })
   }
   flatten(tasks)
   return allTasks
-}
-
-async function fetchTask(id: string) {
-  await new Promise((resolve) => setTimeout(resolve, 500))
-  const allTasks = flattenTasks(initialTasks.tasks)
-  const task = allTasks.find((t) => t.id === id)
-  if (!task) throw new Error("Task not found")
-  return task
-}
-
-async function fetchAllTasks() {
-  await new Promise((resolve) => setTimeout(resolve, 100))
-  return flattenTasks(initialTasks.tasks)
 }
 
 function calculateTaskProgress(task: Task): number {
@@ -90,22 +73,28 @@ function calculateTaskProgress(task: Task): number {
 export default function TaskDetailPage() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const taskId = params.id as string
-  const [comments, setComments] = useState<string>("")
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+
+  // Get active tab from URL, default to "overview"
+  const activeTab = searchParams.get("tab") || "overview"
 
   const { data: task, isLoading, error, refetch } = useQuery({
-    queryKey: ["task", taskId],
-    queryFn: () => fetchTask(taskId),
+    queryKey: ["task-tree", taskId],
+    queryFn: () => getTaskTreeById(taskId),
+    retry: 1,
   })
 
   const { data: allTasks } = useQuery({
-    queryKey: ["all-tasks"],
-    queryFn: fetchAllTasks,
+    queryKey: ["tasks"],
+    queryFn: () => getTasks(),
+    retry: 1,
   })
 
   // Handle 404 for missing tasks
   useEffect(() => {
-    if (error && error instanceof Error && error.message.toLowerCase().includes("not found")) {
+    if (error && error instanceof Error && (error.message.toLowerCase().includes("not found") || error.message.toLowerCase().includes("not authorized"))) {
       notFound()
     }
     if (!isLoading && !error && !task) {
@@ -113,9 +102,15 @@ export default function TaskDetailPage() {
     }
   }, [error, isLoading, task])
 
+  // Flatten tasks for navigation
+  const flattenedTasks = useMemo(() => {
+    if (!allTasks) return []
+    return flattenTasks(allTasks)
+  }, [allTasks])
+
   const navigation = useDetailNavigation({
     currentId: taskId,
-    items: allTasks || [],
+    items: flattenedTasks,
     getId: (t) => t.id,
     basePath: "/tasks",
   })
@@ -158,6 +153,17 @@ export default function TaskDetailPage() {
     { label: "Tasks", href: "/tasks" },
     { label: task.name },
   ]
+
+  // Handle tab change - sync with URL
+  const handleTabChange = (tabId: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (tabId === "overview") {
+      params.delete("tab")
+    } else {
+      params.set("tab", tabId)
+    }
+    router.replace(`/tasks/${taskId}?${params.toString()}`, { scroll: false })
+  }
 
   const tabs = [
     {
@@ -239,94 +245,12 @@ export default function TaskDetailPage() {
     {
       id: "subtasks",
       label: "Subtasks",
-      content: (
-        <div className="space-y-4">
-          {"subtasks" in task && task.subtasks && task.subtasks.length > 0 ? (
-            task.subtasks.map((subtask) => {
-              const subtaskStatus = statusConfig[subtask.status]
-              const subtaskPriority = priorityConfig[subtask.priority]
-              return (
-                <Card key={subtask.id} className="border border-border rounded-2xl">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-foreground mb-1">{subtask.name}</h4>
-                        {subtask.description && (
-                          <p className="text-sm text-muted-foreground">{subtask.description}</p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant={subtaskStatus.variant} className="h-5 px-2 py-0.5 rounded-2xl text-xs">
-                          {subtaskStatus.label}
-                        </Badge>
-                        <Badge variant={subtaskPriority.variant} className="h-5 px-2 py-0.5 rounded-2xl text-xs">
-                          {subtaskPriority.label}
-                        </Badge>
-                      </div>
-                    </div>
-                    {subtask.resource && (
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-6 w-6">
-                          <AvatarImage
-                            src={getAvatarForUser(subtask.resource.id || subtask.resource.name)}
-                            alt={subtask.resource.name}
-                          />
-                          <AvatarFallback className="text-xs">
-                            {subtask.resource.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")
-                              .toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="text-sm text-foreground">{subtask.resource.name}</span>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )
-            })
-          ) : (
-            <Card className="border border-border rounded-2xl">
-              <CardContent className="p-8 text-center">
-                <ListTodo className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground">No subtasks yet</p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      ),
+      content: <TaskSubtasksTab taskId={taskId} task={task} />,
     },
     {
-      id: "comments",
-      label: "Comments",
-      content: (
-        <div className="space-y-4">
-          <Card className="border border-border rounded-2xl">
-            <CardContent className="p-5">
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-sm font-semibold text-foreground mb-2">Add Comment</h3>
-                  <Textarea
-                    value={comments}
-                    onChange={(e) => setComments(e.target.value)}
-                    placeholder="Write a comment..."
-                    className="min-h-[100px]"
-                  />
-                  <Button className="mt-2" onClick={() => setComments("")}>
-                    Post Comment
-                  </Button>
-                </div>
-                <div className="border-t border-border pt-4">
-                  <p className="text-sm text-muted-foreground text-center">
-                    No comments yet. Be the first to comment!
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      ),
+      id: "attachments",
+      label: "Attachments",
+      content: <TaskAttachmentsTab taskId={taskId} />,
     },
   ]
 
@@ -436,13 +360,22 @@ export default function TaskDetailPage() {
               ]
             : []),
         ]}
-        onEdit={() => {
-          // TODO: Open edit drawer
-        }}
+        onEdit={() => setIsEditDialogOpen(true)}
       />
 
       {/* Tabs */}
-      <DetailTabs tabs={tabs} defaultTab="overview" />
+      <DetailTabs 
+        tabs={tabs} 
+        defaultTab={activeTab}
+        onTabChange={handleTabChange}
+      />
+
+      {/* Edit Dialog */}
+      <EditTaskDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        task={task}
+      />
     </div>
   )
 }

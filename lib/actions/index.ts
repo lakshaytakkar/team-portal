@@ -6,3 +6,4 @@
 
 export * from './hr'
 export * from './recruitment'
+export * from './admin'

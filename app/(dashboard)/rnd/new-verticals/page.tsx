@@ -81,12 +81,16 @@ export default function RndNewVerticalsPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-foreground leading-[1.35]">New Verticals</h1>
-          <p className="text-sm text-muted-foreground mt-1">Exploring new business opportunities</p>
+      {/* Header */}
+      <div className="bg-primary/85 text-primary-foreground rounded-md px-4 py-3 flex-shrink-0 w-full">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <h1 className="text-lg font-semibold tracking-tight text-white">New Verticals</h1>
+            <p className="text-xs text-white/90 mt-0.5">Exploring new business opportunities</p>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
+      </div>
+      <div className="flex items-center justify-end gap-3">
           <Button variant="outline" size="default" className="gap-2">
             <FileDown className="h-4 w-4" />
             Export

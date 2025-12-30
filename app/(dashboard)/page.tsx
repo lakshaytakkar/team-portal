@@ -1,5 +1,7 @@
 "use client"
 
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
 import { CheckSquare, Briefcase, Phone, Clock, Users, TrendingUp } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -9,7 +11,11 @@ import {
   DashboardHeader,
   DashboardChartWidget,
   DashboardTable,
+  ExecutiveKPIs,
+  QuickLinks,
+  RecentActivity,
 } from "@/components/dashboard"
+import { useUserContext } from "@/lib/providers/UserContextProvider"
 import {
   ChartContainer,
   ChartTooltip,
@@ -70,7 +76,17 @@ const COLORS = [
 ]
 
 export default function MainDashboardPage() {
+  const router = useRouter()
+  const { user } = useUserContext()
   const [searchQuery, setSearchQuery] = useState("")
+  
+  // Redirect superadmin/CEO to /explore
+  useEffect(() => {
+    if (user?.isSuperadmin) {
+      router.replace('/explore')
+    }
+  }, [user, router])
+  
   const { data: dashboard, isLoading, error, refetch } = useQuery({
     queryKey: ["main-dashboard"],
     queryFn: fetchMainDashboard,
@@ -79,6 +95,18 @@ export default function MainDashboardPage() {
   const filteredActivities = dashboard?.activities.filter((activity) =>
     activity.title.toLowerCase().includes(searchQuery.toLowerCase())
   ) || []
+
+  // Transform activities for RecentActivity component
+  const recentActivitiesData = filteredActivities.map((activity) => ({
+    id: activity.id || Math.random().toString(),
+    type: activity.type as "task" | "project" | "call" | "leave" | "employee" | "deal",
+    title: activity.title,
+    description: activity.assignee ? `Assigned to ${activity.assignee}` : undefined,
+    status: activity.status,
+    assignee: activity.assignee,
+    timestamp: activity.date ? new Date(activity.date) : new Date(),
+    href: activity.href,
+  }))
 
   const activityColumns = [
     {
@@ -127,52 +155,101 @@ export default function MainDashboardPage() {
   // Role-based stats (defaulting to Executive view for now)
   const stats = dashboard?.stats
 
+  // Don't render dashboard for superadmin (redirecting to /explore)
+  if (user?.isSuperadmin) {
+    return null
+  }
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <DashboardHeader
-        title="Dashboard"
+        title={isSuperadmin ? "Executive Dashboard" : "Dashboard"}
         onManageDashboard={() => {}}
         onExport={() => {}}
       />
 
-      {/* Stat Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-        <DashboardStatCard
-          title="My Tasks"
-          value={stats?.myTasks || 0}
-          change={`+${stats?.myTasksChange || 0}%`}
-          changeLabel="vs last month"
-          icon={CheckSquare}
-          variant="positive"
+      {/* Executive KPIs - For superadmin */}
+      {isSuperadmin ? (
+        <ExecutiveKPIs
+          data={{
+            revenue: {
+              value: "$0",
+              change: "+0%",
+              changeLabel: "vs last month",
+            },
+            employees: {
+              value: stats?.myTasks || 0,
+              change: "+0%",
+              changeLabel: "total",
+            },
+            projects: {
+              value: stats?.myProjects || 0,
+              change: "+0%",
+              changeLabel: "active",
+            },
+            tasks: {
+              value: stats?.myTasks || 0,
+              change: "+0%",
+              changeLabel: "total",
+            },
+            activeProjects: {
+              value: stats?.myProjects || 0,
+              change: "+0%",
+              changeLabel: "active",
+            },
+            completionRate: {
+              value: "0%",
+              change: "+0%",
+              changeLabel: "this month",
+            },
+          }}
+          isLoading={isLoading}
         />
-        <DashboardStatCard
-          title="My Projects"
-          value={stats?.myProjects || 0}
-          change={`+${stats?.myProjectsChange || 0}%`}
-          changeLabel="vs last month"
-          icon={Briefcase}
-          variant="positive"
-        />
-        <DashboardStatCard
-          title="My Calls"
-          value={stats?.myCalls || 0}
-          change={`+${stats?.myCallsChange || 0}%`}
-          changeLabel="vs last month"
-          icon={Phone}
-          variant="positive"
-        />
-        <DashboardStatCard
-          title="Attendance"
-          value={stats?.myAttendance || "Present"}
-          change={`${stats?.myAttendanceChange || 0}%`}
-          changeLabel="this month"
-          icon={Clock}
-          variant="positive"
-        />
-      </div>
+      ) : (
+        /* Regular Stat Cards - For employees */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+          <DashboardStatCard
+            title="My Tasks"
+            value={stats?.myTasks || 0}
+            change={`+${stats?.myTasksChange || 0}%`}
+            changeLabel="vs last month"
+            icon={CheckSquare}
+            variant="positive"
+          />
+          <DashboardStatCard
+            title="My Projects"
+            value={stats?.myProjects || 0}
+            change={`+${stats?.myProjectsChange || 0}%`}
+            changeLabel="vs last month"
+            icon={Briefcase}
+            variant="positive"
+          />
+          <DashboardStatCard
+            title="My Calls"
+            value={stats?.myCalls || 0}
+            change={`+${stats?.myCallsChange || 0}%`}
+            changeLabel="vs last month"
+            icon={Phone}
+            variant="positive"
+          />
+          <DashboardStatCard
+            title="Attendance"
+            value={stats?.myAttendance || "Present"}
+            change={`${stats?.myAttendanceChange || 0}%`}
+            changeLabel="this month"
+            icon={Clock}
+            variant="positive"
+          />
+        </div>
+      )}
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      {/* Quick Links */}
+      <QuickLinks maxItems={isSuperadmin ? 15 : 8} />
+
+      {/* Charts and Recent Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div className="lg:col-span-2">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <DashboardChartWidget
           title="Task Completion"
           timePeriod={{
@@ -261,19 +338,14 @@ export default function MainDashboardPage() {
             </div>
           </div>
         </DashboardChartWidget>
+          </div>
+        </div>
+        <RecentActivity
+          activities={recentActivitiesData}
+          isLoading={isLoading}
+          maxItems={5}
+        />
       </div>
-
-      {/* Table */}
-      <DashboardTable
-        title="Recent Activities"
-        columns={activityColumns}
-        data={filteredActivities}
-        searchPlaceholder="Search activities..."
-        onSearch={setSearchQuery}
-        onFilter={() => {}}
-        onSort={() => {}}
-        className="h-[436px]"
-      />
     </div>
   )
 }

@@ -14,7 +14,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
+import { Button } from "@/components/ui/button"
 import { User, LogOut, ChevronDown, PenTool } from "lucide-react"
+import { useUserContext } from "@/lib/providers/UserContextProvider"
+import { signOut } from "@/lib/actions/auth"
+import { TopbarGlobalSearch } from "@/components/search/TopbarGlobalSearch"
+import { TopbarNotifications } from "@/components/notifications/TopbarNotifications"
 
 interface BreadcrumbItem {
   label: string
@@ -27,13 +32,25 @@ interface TopbarProps {
 
 export function Topbar({ breadcrumbs = [{ label: "Home" }, { label: "Dashboard" }] }: TopbarProps) {
   const router = useRouter()
+  const { user, isLoading } = useUserContext()
   const [logoutDialogOpen, setLogoutDialogOpen] = React.useState(false)
 
-  const handleLogout = () => {
-    // TODO: Implement actual logout logic (clear session, tokens, etc.)
-    router.push("/sign-in")
-    setLogoutDialogOpen(false)
+  const handleLogout = async () => {
+    try {
+      await signOut()
+      setLogoutDialogOpen(false)
+    } catch (error) {
+      console.error('Logout error:', error)
+      // Still redirect even if signOut fails
+      router.push("/sign-in")
+      setLogoutDialogOpen(false)
+    }
   }
+
+  const userDisplayName = user?.name || 'User'
+  const userEmail = user?.email || ''
+  const userRole = user?.role || 'employee'
+  const userAvatar = user?.avatar || getAvatarForUser(userDisplayName)
 
   return (
     <div className="h-[72px] border-b border-border mb-5 flex items-center justify-between px-5 py-4">
@@ -57,28 +74,41 @@ export function Topbar({ breadcrumbs = [{ label: "Home" }, { label: "Dashboard" 
 
       {/* Actions */}
       <div className="flex gap-2.5 items-center">
-        {/* Profile Menu */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="flex gap-2 items-center hover:bg-muted rounded-lg px-2 py-1.5 transition-colors focus:outline-none">
-              <Avatar className="h-8 w-8 bg-primary/20">
-                <AvatarImage src={getAvatarForUser("Robert Johnson")} alt="Robert Johnson" />
-                <AvatarFallback className="text-primary text-xs font-medium">RJ</AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col items-start leading-[1.5] text-sm tracking-[0.28px]">
-                <p className="font-semibold text-foreground">Robert Johnson</p>
-                <p className="font-normal text-muted-foreground">Super Admin</p>
-              </div>
-              <ChevronDown className="h-4 w-4 text-muted-foreground ml-1" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>
-              <div className="flex flex-col space-y-0.5">
-                <p className="text-sm font-medium leading-5 tracking-[0.28px]">Robert Johnson</p>
-                <p className="text-sm leading-5 tracking-[0.28px] text-muted-foreground">robert@example.com</p>
-              </div>
-            </DropdownMenuLabel>
+        {/* Global Search */}
+        <TopbarGlobalSearch />
+        
+        {/* Notifications */}
+        {user && <TopbarNotifications />}
+        
+        {/* Profile Menu or Sign In Button */}
+        {isLoading ? (
+          // Show loading state while checking authentication
+          <div className="h-8 w-20 bg-muted animate-pulse rounded-md" />
+        ) : user ? (
+          // Show user menu when logged in
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex gap-2 items-center hover:bg-muted rounded-lg px-2 py-1.5 transition-colors focus:outline-none">
+                <Avatar className="h-8 w-8 bg-primary/20">
+                  <AvatarImage src={userAvatar} alt={userDisplayName} />
+                  <AvatarFallback className="text-primary text-xs font-medium">
+                    {userDisplayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col items-start leading-[1.5] text-sm tracking-[0.28px]">
+                  <p className="font-semibold text-foreground">{userDisplayName}</p>
+                  <p className="font-normal text-muted-foreground capitalize">{userRole}</p>
+                </div>
+                <ChevronDown className="h-4 w-4 text-muted-foreground ml-1" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>
+                <div className="flex flex-col space-y-0.5">
+                  <p className="text-sm font-medium leading-5 tracking-[0.28px]">{userDisplayName}</p>
+                  <p className="text-sm leading-5 tracking-[0.28px] text-muted-foreground">{userEmail}</p>
+                </div>
+              </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <Link href="/profile" className="cursor-pointer">
@@ -103,6 +133,14 @@ export function Topbar({ breadcrumbs = [{ label: "Home" }, { label: "Dashboard" 
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        ) : (
+          // Show sign in button when not logged in
+          <Link href="/sign-in">
+            <Button variant="outline" size="sm">
+              Sign In
+            </Button>
+          </Link>
+        )}
       </div>
 
       <ConfirmationDialog

@@ -53,15 +53,15 @@ export function DetailDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={cn("sm:max-w-[540px] max-h-[90vh] flex flex-col p-0", className)}>
-        <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0 border-b border-[#dfe1e7]">
-          <DialogTitle className="text-lg font-semibold text-[#0d0d12] leading-[1.4] tracking-[0.36px]">
+        <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0 border-b border-border">
+          <DialogTitle className="text-lg font-semibold text-foreground leading-[1.4] tracking-[0.36px]">
             {title}
           </DialogTitle>
         </DialogHeader>
 
         {/* Tabs (if provided) */}
         {tabs && tabs.length > 0 && (
-          <div className="border-b border-[#dfe1e7] px-6 py-4 flex-shrink-0">
+          <div className="border-b border-border px-6 py-4 flex-shrink-0">
             <Tabs value={activeTab} onValueChange={handleTabChange}>
               <TabsList className="bg-muted p-0.5 rounded-xl w-full">
                 {tabs.map((tab) => (
@@ -97,7 +97,7 @@ export function DetailDialog({
 
         {/* Footer */}
         {footer && (
-          <div className="border-t border-[#dfe1e7] h-[88px] flex items-center justify-end gap-3.5 px-6 flex-shrink-0">
+          <div className="border-t border-border h-[88px] flex items-center justify-end gap-3.5 px-6 flex-shrink-0">
             {footer}
           </div>
         )}
@@ -105,5 +105,6 @@ export function DetailDialog({
     </Dialog>
   )
 }
+
 
 

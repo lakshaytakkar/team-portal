@@ -170,9 +170,14 @@ export default function FinanceInvoicesPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-semibold text-foreground leading-[1.35]">Invoices</h1>
-        <p className="text-sm text-muted-foreground mt-1">Manage invoices, payments, and billing</p>
+      {/* Header */}
+      <div className="bg-primary/85 text-primary-foreground rounded-md px-4 py-3 flex-shrink-0 w-full">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <h1 className="text-lg font-semibold tracking-tight text-white">Invoices</h1>
+            <p className="text-xs text-white/90 mt-0.5">Manage invoices, payments, and billing</p>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

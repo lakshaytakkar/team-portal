@@ -26,13 +26,15 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import { createEmployee, getDepartments, getManagers } from "@/lib/actions/hr"
+import { createEmployee, getDepartments, getManagers, getVerticals, getRoles } from "@/lib/actions/hr"
 import { Loader2 } from "lucide-react"
 
 interface CreateEmployeeDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
+
+const NONE_VALUE = "__none__"
 
 export function CreateEmployeeDialog({ open, onOpenChange }: CreateEmployeeDialogProps) {
   const queryClient = useQueryClient()
@@ -41,7 +43,9 @@ export function CreateEmployeeDialog({ open, onOpenChange }: CreateEmployeeDialo
     fullName: "",
     email: "",
     departmentId: "",
-    position: "",
+    verticalId: "",
+    roleId: "",
+    position: "", // Deprecated, kept for backward compatibility
     startDate: "",
     phone: "",
     address: "",
@@ -50,7 +54,7 @@ export function CreateEmployeeDialog({ open, onOpenChange }: CreateEmployeeDialo
     salary: "",
   })
 
-  // Fetch departments and managers
+  // Fetch departments, managers, verticals, and roles
   const { data: departments = [] } = useQuery({
     queryKey: ["departments"],
     queryFn: getDepartments,
@@ -63,6 +67,18 @@ export function CreateEmployeeDialog({ open, onOpenChange }: CreateEmployeeDialo
     enabled: open, // Only fetch when dialog is open
   })
 
+  const { data: verticals = [] } = useQuery({
+    queryKey: ["verticals"],
+    queryFn: getVerticals,
+    enabled: open,
+  })
+
+  const { data: roles = [] } = useQuery({
+    queryKey: ["roles"],
+    queryFn: getRoles,
+    enabled: open,
+  })
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
@@ -72,7 +88,9 @@ export function CreateEmployeeDialog({ open, onOpenChange }: CreateEmployeeDialo
         email: formData.email,
         phone: formData.phone || undefined,
         departmentId: formData.departmentId || undefined,
-        position: formData.position || undefined,
+        verticalId: formData.verticalId || null,
+        roleId: formData.roleId || undefined,
+        position: formData.position || undefined, // Deprecated, kept for backward compatibility
         managerId: formData.managerId || undefined,
         hireDate: formData.startDate,
         employmentType: 'full-time',
@@ -90,6 +108,8 @@ export function CreateEmployeeDialog({ open, onOpenChange }: CreateEmployeeDialo
         fullName: "",
         email: "",
         departmentId: "",
+        verticalId: "",
+        roleId: "",
         position: "",
         startDate: "",
         phone: "",
@@ -114,6 +134,8 @@ export function CreateEmployeeDialog({ open, onOpenChange }: CreateEmployeeDialo
       fullName: "",
       email: "",
       departmentId: "",
+      verticalId: "",
+      roleId: "",
       position: "",
       startDate: "",
       phone: "",
@@ -163,6 +185,28 @@ export function CreateEmployeeDialog({ open, onOpenChange }: CreateEmployeeDialo
 
             <div className="space-y-2">
               <Label className="text-sm font-medium text-[#666d80] leading-[1.5] tracking-[0.28px]">
+                Vertical (Optional)
+              </Label>
+              <Select 
+                value={formData.verticalId || NONE_VALUE} 
+                onValueChange={(value) => setFormData({ ...formData, verticalId: value === NONE_VALUE ? "" : value })}
+              >
+                <SelectTrigger className="h-[52px] rounded-xl border-[#dfe1e7] text-base tracking-[0.32px]">
+                  <SelectValue placeholder="Select vertical (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE_VALUE}>None (Vertical-agnostic)</SelectItem>
+                  {verticals.map((vertical) => (
+                    <SelectItem key={vertical.id} value={vertical.id}>
+                      {vertical.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-[#666d80] leading-[1.5] tracking-[0.28px]">
                 Department <span className="text-[#df1c41]">*</span>
               </Label>
               <Select value={formData.departmentId} onValueChange={(value) => setFormData({ ...formData, departmentId: value })}>
@@ -181,14 +225,20 @@ export function CreateEmployeeDialog({ open, onOpenChange }: CreateEmployeeDialo
 
             <div className="space-y-2">
               <Label className="text-sm font-medium text-[#666d80] leading-[1.5] tracking-[0.28px]">
-                Position
+                Role <span className="text-[#df1c41]">*</span>
               </Label>
-              <Input
-                value={formData.position}
-                onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-                placeholder="Enter job position"
-                className="h-[52px] rounded-xl border-[#dfe1e7] text-base tracking-[0.32px] placeholder:text-[#818898]"
-              />
+              <Select value={formData.roleId} onValueChange={(value) => setFormData({ ...formData, roleId: value })}>
+                <SelectTrigger className="h-[52px] rounded-xl border-[#dfe1e7] text-base tracking-[0.32px]">
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  {roles.map((role) => (
+                    <SelectItem key={role.id} value={role.id}>
+                      {role.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
@@ -239,15 +289,18 @@ export function CreateEmployeeDialog({ open, onOpenChange }: CreateEmployeeDialo
                   </div>
                   <div className="space-y-2">
                     <Label className="text-sm font-medium text-[#666d80] leading-[1.5] tracking-[0.28px]">Manager</Label>
-                    <Select value={formData.managerId} onValueChange={(value) => setFormData({ ...formData, managerId: value })}>
+                    <Select 
+                      value={formData.managerId || NONE_VALUE} 
+                      onValueChange={(value) => setFormData({ ...formData, managerId: value === NONE_VALUE ? "" : value })}
+                    >
                       <SelectTrigger className="h-[52px] rounded-xl border-[#dfe1e7] text-base tracking-[0.32px]">
                         <SelectValue placeholder="Select manager" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value={NONE_VALUE}>None</SelectItem>
                         {managers.map((manager) => (
                           <SelectItem key={manager.id} value={manager.id}>
-                            {manager.fullName || manager.email}
+                            {manager.full_name || manager.email}
                           </SelectItem>
                         ))}
                       </SelectContent>

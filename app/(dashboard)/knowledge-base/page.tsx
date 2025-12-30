@@ -1,8 +1,14 @@
 export default function KnowledgeBasePage() {
   return (
     <div>
-      <div className="mb-5 flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-foreground leading-[1.35]">Knowledge Base</h1>
+      {/* Header */}
+      <div className="bg-primary/85 text-primary-foreground rounded-md px-4 py-3 flex-shrink-0 w-full mb-5">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <h1 className="text-lg font-semibold tracking-tight text-white">Knowledge Base</h1>
+            <p className="text-xs text-white/90 mt-0.5">Company documentation, guides, and resources</p>
+          </div>
+        </div>
       </div>
       <div className="rounded-[14px] border border-border bg-white p-8">
         <div className="flex flex-col items-center justify-center py-12 text-center">
