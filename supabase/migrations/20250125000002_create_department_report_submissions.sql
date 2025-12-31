@@ -175,3 +175,4 @@ COMMENT ON COLUMN department_report_submissions.is_on_time IS 'True if submitted
 COMMENT ON COLUMN department_report_submissions.days_late IS 'Number of days late (NULL if on time)';
 COMMENT ON COLUMN department_report_submissions.reminder_sent_count IS 'Number of reminders sent for this submission';
 
+

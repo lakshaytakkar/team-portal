@@ -119,3 +119,4 @@ CREATE INDEX IF NOT EXISTS idx_sales_automation_logs_entity ON sales_automation_
 CREATE INDEX IF NOT EXISTS idx_sales_automation_logs_status ON sales_automation_logs(status);
 
 
+

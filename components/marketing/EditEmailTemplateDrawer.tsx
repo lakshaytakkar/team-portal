@@ -218,3 +218,4 @@ export function EditEmailTemplateDrawer({ open, onOpenChange, template }: EditEm
   )
 }
 
+

@@ -96,3 +96,4 @@ COMMENT ON COLUMN department_report_assignments.report_type IS 'Type of report: 
 COMMENT ON COLUMN department_report_assignments.submission_deadline_time IS 'Time of day when report is due (e.g., 18:00 for 6 PM)';
 COMMENT ON COLUMN department_report_assignments.timezone IS 'Timezone for deadline calculation';
 
+

@@ -52,3 +52,4 @@ ALTER TABLE notifications ADD CONSTRAINT notifications_type_check CHECK (type IN
   'department_report_reminder_escalation'
 ));
 
+

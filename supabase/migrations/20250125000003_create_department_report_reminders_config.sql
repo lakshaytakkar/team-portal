@@ -130,3 +130,4 @@ COMMENT ON COLUMN department_report_reminder_configs.days_after IS 'Days after d
 COMMENT ON COLUMN department_report_reminder_configs.escalation_level IS 'Escalation level (1-5) for multiple reminders';
 COMMENT ON COLUMN department_report_reminder_configs.notify_users IS 'JSONB array of user IDs or roles: ["assigned_user", "manager", "superadmin"]';
 
+

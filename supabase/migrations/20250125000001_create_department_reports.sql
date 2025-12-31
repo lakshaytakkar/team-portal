@@ -168,3 +168,4 @@ COMMENT ON COLUMN department_reports.custom_data IS 'Additional data for separat
 COMMENT ON COLUMN department_reports.deadline IS 'Calculated deadline (report_date + deadline_time from assignment)';
 COMMENT ON COLUMN department_reports.is_late IS 'Automatically calculated based on submission time vs deadline';
 
+
