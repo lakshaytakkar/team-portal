@@ -42,7 +42,7 @@ export default function TeamsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-primary/85 text-primary-foreground rounded-md px-4 py-3 flex-shrink-0 w-full">
+      <div className="bg-primary text-primary-foreground rounded-md px-4 py-3 flex-shrink-0 w-full">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
             <h1 className="text-lg font-semibold tracking-tight text-white">Teams</h1>

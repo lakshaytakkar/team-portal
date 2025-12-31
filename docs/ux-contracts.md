@@ -269,7 +269,7 @@ This document defines the standard UX patterns, components, and behaviors used t
 ## Color Usage
 
 ### Primary Actions
-- **Color**: #897EFA (purple from design system)
+- **Color**: #1e3a8a (dark blue - primary color)
 - **Hover**: Slightly darker shade
 - **Text**: White
 

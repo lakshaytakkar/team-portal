@@ -84,16 +84,16 @@ export default function RndMindmapsPage() {
           </div>
         </div>
       </div>
+
       <div className="flex items-center justify-end gap-3">
-          <Button variant="outline" size="default" className="gap-2">
-            <FileDown className="h-4 w-4" />
-            Export
-          </Button>
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" />
-            New Mindmap
-          </Button>
-        </div>
+        <Button variant="outline" size="default" className="gap-2">
+          <FileDown className="h-4 w-4" />
+          Export
+        </Button>
+        <Button className="gap-2">
+          <Plus className="h-4 w-4" />
+          New Mindmap
+        </Button>
       </div>
 
       <Card className="border border-border rounded-[14px]">

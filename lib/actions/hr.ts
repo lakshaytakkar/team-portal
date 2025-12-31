@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import type { Employee as FrontendEmployee, Onboarding as FrontendOnboarding, HRUser, HRTemplate, HRTemplateType } from '@/lib/types/hr'
 import { resolveDepartmentId, resolveProfileId, resolveVerticalId, resolveRoleId, getOrCreateTeam, normalizeOptional } from '@/lib/utils/foreign-keys'
 import { getUserFriendlyErrorMessage, logDatabaseError } from '@/lib/utils/errors'
@@ -42,6 +43,26 @@ export {
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
+
+/**
+ * Create a service role client for admin operations
+ * This bypasses RLS and allows admin operations like creating auth users
+ */
+function createAdminClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Missing Supabase service role key. Admin operations require SUPABASE_SERVICE_ROLE_KEY.')
+  }
+
+  return createServiceClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  })
+}
 
 function toHRUser(profile: { id: string; full_name: string | null; email: string; avatar_url: string | null } | null): HRUser | undefined {
   if (!profile) return undefined
@@ -602,6 +623,7 @@ interface CreateEmployeeInput {
 
 export async function createEmployee(input: CreateEmployeeInput): Promise<FrontendEmployee> {
   const supabase = await createClient()
+  const adminClient = createAdminClient()
 
   try {
     // Normalize optional fields
@@ -632,10 +654,45 @@ export async function createEmployee(input: CreateEmployeeInput): Promise<Fronte
       nextId = `EMP${String(lastNum + 1).padStart(3, '0')}`
     }
 
-    // Create profile first
+    // Check if auth user already exists for this email
+    const { data: existingAuthUsers } = await adminClient.auth.admin.listUsers()
+    const existingAuthUser = existingAuthUsers?.users.find(u => u.email === input.email)
+
+    let userId: string
+
+    if (existingAuthUser) {
+      // Use existing auth user
+      userId = existingAuthUser.id
+    } else {
+      // Create auth user first
+      // Generate a temporary password (employee will need to reset it)
+      const tempPassword = `Temp${nextId}${Math.random().toString(36).slice(-8)}!`
+      
+      const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
+        email: input.email,
+        password: tempPassword,
+        email_confirm: true,
+        user_metadata: {
+          full_name: input.fullName,
+        },
+      })
+
+      if (authError) {
+        throw new Error(`Failed to create auth user: ${authError.message}`)
+      }
+
+      if (!authData.user) {
+        throw new Error('Failed to create auth user: No user returned')
+      }
+
+      userId = authData.user.id
+    }
+
+    // Create profile with the auth user's ID
     const { data: newProfile, error: profileError } = await supabase
       .from('profiles')
       .insert({
+        id: userId, // Use auth user's ID
         email: input.email,
         full_name: input.fullName,
         phone: normalizedPhone,
@@ -648,7 +705,13 @@ export async function createEmployee(input: CreateEmployeeInput): Promise<Fronte
       .select()
       .single()
 
-    if (profileError) throw new Error(profileError.message)
+    if (profileError) {
+      // Cleanup: delete auth user if profile creation fails (only if we just created it)
+      if (!existingAuthUser) {
+        await adminClient.auth.admin.deleteUser(userId).catch(() => {})
+      }
+      throw new Error(profileError.message)
+    }
 
     // Create employee record
     const { data: newEmployee, error: employeeError } = await supabase

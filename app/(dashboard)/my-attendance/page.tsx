@@ -1,6 +1,8 @@
 "use client"
 
 import * as React from "react"
+import { useState, useMemo } from "react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   useReactTable,
   getCoreRowModel,
@@ -12,14 +14,11 @@ import {
   type SortingState,
   type ColumnFiltersState,
 } from "@tanstack/react-table"
-import { Search, Filter, ArrowUpDown, ChevronLeft, ChevronRight, MoreVertical } from "lucide-react"
+import { Search, ArrowUpDown, ChevronLeft, ChevronRight, LogIn, LogOut, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { RequestLeaveDialog } from "@/components/attendance/RequestLeaveDialog"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import { getAvatarForUser } from "@/lib/utils/avatars"
 import { Input } from "@/components/ui/input"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
   Table,
   TableBody,
@@ -35,243 +34,162 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { getAttendance, checkIn, checkOut } from "@/lib/actions/attendance"
+import type { Attendance } from "@/lib/types/attendance"
+import { useUser } from "@/lib/hooks/useUser"
+import { RowActionsMenu } from "@/components/actions/RowActionsMenu"
+import { format } from "date-fns"
+import { EmptyState } from "@/components/ui/empty-state"
+import { ErrorState } from "@/components/ui/error-state"
+import { Skeleton } from "@/components/ui/skeleton"
+import { toast } from "@/components/ui/sonner"
 
-// Types
-type AttendanceRecord = {
-  id: string
-  no: number
-  employeeName: string
-  employeeAvatar?: string
-  department: string
-  clockIn: string
-  clockOut: string
-  workHours: string
-  status: string
+const statusConfig: Record<string, { label: string; variant: "neutral-outline" | "primary-outline" | "green-outline" | "red-outline" | "yellow-outline" }> = {
+  present: { label: "Present", variant: "green-outline" },
+  absent: { label: "Absent", variant: "red-outline" },
+  late: { label: "Late", variant: "yellow-outline" },
+  "half-day": { label: "Half Day", variant: "primary-outline" },
+  leave: { label: "Leave", variant: "neutral-outline" },
 }
 
-// Sample data
-const defaultData: AttendanceRecord[] = [
-  {
-    id: "1",
-    no: 1,
-    employeeName: "John Doe",
-    employeeAvatar: undefined,
-    department: "Design",
-    clockIn: "9.00 AM",
-    clockOut: "4.30 PM",
-    workHours: "7h 30m",
-    status: "Onsite - Fulltime",
-  },
-  {
-    id: "2",
-    no: 2,
-    employeeName: "Jane Smith",
-    employeeAvatar: undefined,
-    department: "Engineering",
-    clockIn: "8.45 AM",
-    clockOut: "5.15 PM",
-    workHours: "8h 30m",
-    status: "Hybrid - 3 days onsite",
-  },
-  {
-    id: "3",
-    no: 3,
-    employeeName: "Carlos Garcia",
-    employeeAvatar: undefined,
-    department: "Marketing",
-    clockIn: "9.30 AM",
-    clockOut: "6.00 PM",
-    workHours: "8h 30m",
-    status: "Remote - Fulltime",
-  },
-  {
-    id: "4",
-    no: 4,
-    employeeName: "Aisha Khan",
-    employeeAvatar: undefined,
-    department: "Product",
-    clockIn: "10.00 AM",
-    clockOut: "2.00 PM",
-    workHours: "4h 0m",
-    status: "Onsite - Part-time",
-  },
-  {
-    id: "5",
-    no: 5,
-    employeeName: "Wei Chen",
-    employeeAvatar: undefined,
-    department: "Data Science",
-    clockIn: "9.05 AM",
-    clockOut: "5.35 PM",
-    workHours: "8h 30m",
-    status: "Hybrid - Flexible",
-  },
-  {
-    id: "6",
-    no: 6,
-    employeeName: "Fatima Al-Sayed",
-    employeeAvatar: undefined,
-    department: "Human Resources",
-    clockIn: "8.30 AM",
-    clockOut: "4.30 PM",
-    workHours: "8h 0m",
-    status: "Onsite - Fulltime",
-  },
-  {
-    id: "7",
-    no: 7,
-    employeeName: "Liam O'Connell",
-    employeeAvatar: undefined,
-    department: "Engineering",
-    clockIn: "11.00 AM",
-    clockOut: "7.00 PM",
-    workHours: "8h 0m",
-    status: "Remote - Contractor",
-  },
-  {
-    id: "8",
-    no: 8,
-    employeeName: "Sofia Petrova",
-    employeeAvatar: undefined,
-    department: "Sales",
-    clockIn: "9.15 AM",
-    clockOut: "5.45 PM",
-    workHours: "8h 30m",
-    status: "Onsite - Fulltime",
-  },
-  {
-    id: "9",
-    no: 9,
-    employeeName: "Kenji Tanaka",
-    employeeAvatar: undefined,
-    department: "Design",
-    clockIn: "9.45 AM",
-    clockOut: "1.45 PM",
-    workHours: "4h 0m",
-    status: "Onsite - Intern",
-  },
-  {
-    id: "10",
-    no: 10,
-    employeeName: "Chloe Dubois",
-    employeeAvatar: undefined,
-    department: "Customer Support",
-    clockIn: "12.00 PM",
-    clockOut: "8.00 PM",
-    workHours: "8h 0m",
-    status: "Remote - Shift Work",
-  },
-]
-
-// Table columns definition
-const columns: ColumnDef<AttendanceRecord>[] = [
-  {
-    id: "select",
-    size: 72,
-    header: ({ table }) => (
-      <div className="flex items-center gap-2.5">
-        <Checkbox
-          checked={table.getIsAllPageRowsSelected()}
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          className="h-4 w-4 rounded border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-        />
-        <span className="text-sm font-medium text-muted-foreground tracking-[0.28px]">No</span>
-      </div>
-    ),
-    cell: ({ row }) => (
-      <div className="flex items-center gap-2.5">
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          className="h-4 w-4 rounded border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-        />
-        <span className="text-sm font-medium text-foreground tracking-[0.28px]">{row.original.no}</span>
-      </div>
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
-  {
-    accessorKey: "employeeName",
-    size: 184,
-    header: "Employee Name",
-    cell: ({ row }) => (
-      <div className="flex items-center gap-2.5">
-        <Avatar className="h-8 w-8">
-          <AvatarImage src={getAvatarForUser(row.original.employeeName || "user")} />
-          <AvatarFallback className="bg-primary/20 text-primary">
-            {row.original.employeeName
-              .split(" ")
-              .map((n) => n[0])
-              .join("")}
-          </AvatarFallback>
-        </Avatar>
-        <span className="text-sm font-medium text-foreground tracking-[0.28px]">{row.original.employeeName}</span>
-      </div>
-    ),
-  },
-  {
-    accessorKey: "department",
-    header: "Department",
-    cell: ({ row }) => (
-      <div className="inline-flex items-center gap-1 rounded-full border border-status-completed-foreground bg-white px-2 py-0.5 h-5">
-        <div className="h-1.5 w-1.5 rounded-full bg-status-completed-foreground" />
-        <span className="text-xs font-medium leading-[18px] text-status-completed-foreground tracking-[0.12px]">
-          {row.original.department}
-        </span>
-      </div>
-    ),
-  },
-  {
-    accessorKey: "clockIn",
-    header: "Clock In",
-    cell: ({ row }) => (
-      <span className="text-sm font-medium text-foreground tracking-[0.28px]">{row.original.clockIn}</span>
-    ),
-  },
-  {
-    accessorKey: "clockOut",
-    header: "Clock Out",
-    cell: ({ row }) => (
-      <span className="text-sm font-medium text-foreground tracking-[0.28px]">{row.original.clockOut}</span>
-    ),
-  },
-  {
-    accessorKey: "workHours",
-    header: "Work Hours",
-    cell: ({ row }) => (
-      <span className="text-sm font-medium text-foreground tracking-[0.28px]">{row.original.workHours}</span>
-    ),
-  },
-  {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => (
-      <span className="text-sm font-medium text-foreground tracking-[0.28px]">{row.original.status}</span>
-    ),
-  },
-  {
-    id: "actions",
-    cell: () => (
-      <button className="flex items-center justify-center w-4 h-4">
-        <MoreVertical className="h-4 w-4 text-muted-foreground" />
-      </button>
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
-]
-
 export default function MyAttendancePage() {
-  const [data] = React.useState<AttendanceRecord[]>(defaultData)
+  const queryClient = useQueryClient()
+  const { user, isLoading: userLoading } = useUser()
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [globalFilter, setGlobalFilter] = React.useState("")
   const [rowSelection, setRowSelection] = React.useState({})
-  const [isRequestLeaveOpen, setIsRequestLeaveOpen] = React.useState(false)
+  const [isRequestLeaveOpen, setIsRequestLeaveOpen] = useState(false)
+  const [statusFilter, setStatusFilter] = useState<string>("all")
+
+  const filters = useMemo(() => {
+    const f: any = {}
+    if (globalFilter.trim().length >= 2) {
+      f.search = globalFilter.trim()
+    }
+    if (statusFilter !== "all") {
+      f.status = [statusFilter]
+    }
+    return f
+  }, [globalFilter, statusFilter])
+
+  const { data: attendanceData, isLoading, error, refetch } = useQuery({
+    queryKey: ["my-attendance", filters, user?.id],
+    queryFn: async () => {
+      if (!user?.id) return []
+      return await getAttendance(filters, user.id)
+    },
+    enabled: !userLoading && !!user?.id,
+  })
+
+  const checkInMutation = useMutation({
+    mutationFn: checkIn,
+    onSuccess: () => {
+      toast.success("Checked in successfully")
+      queryClient.invalidateQueries({ queryKey: ["my-attendance"] })
+    },
+    onError: (error: Error) => {
+      toast.error("Failed to check in", { description: error.message })
+    },
+  })
+
+  const checkOutMutation = useMutation({
+    mutationFn: checkOut,
+    onSuccess: () => {
+      toast.success("Checked out successfully")
+      queryClient.invalidateQueries({ queryKey: ["my-attendance"] })
+    },
+    onError: (error: Error) => {
+      toast.error("Failed to check out", { description: error.message })
+    },
+  })
+
+  const handleCheckIn = () => {
+    if (!user?.id) return
+    checkInMutation.mutate(user.id)
+  }
+
+  const handleCheckOut = () => {
+    if (!user?.id) return
+    checkOutMutation.mutate(user.id)
+  }
+
+  const formatTime = (timeString?: string) => {
+    if (!timeString) return "-"
+    return format(new Date(timeString), "h:mm a")
+  }
+
+  const formatWorkHours = (hours?: number) => {
+    if (!hours) return "-"
+    const h = Math.floor(hours)
+    const m = Math.round((hours - h) * 60)
+    return `${h}h ${m}m`
+  }
+
+  const columns = useMemo<ColumnDef<Attendance>[]>(() => [
+    {
+      id: "date",
+      header: "Date",
+      cell: ({ row }) => (
+        <span className="text-sm font-medium text-foreground">
+          {format(new Date(row.original.date), "MMM dd, yyyy")}
+        </span>
+      ),
+    },
+    {
+      id: "checkIn",
+      header: "Clock In",
+      cell: ({ row }) => (
+        <span className="text-sm font-medium text-foreground">
+          {formatTime(row.original.checkInTime)}
+        </span>
+      ),
+    },
+    {
+      id: "checkOut",
+      header: "Clock Out",
+      cell: ({ row }) => (
+        <span className="text-sm font-medium text-foreground">
+          {formatTime(row.original.checkOutTime)}
+        </span>
+      ),
+    },
+    {
+      id: "workHours",
+      header: "Work Hours",
+      cell: ({ row }) => (
+        <span className="text-sm font-medium text-foreground">
+          {formatWorkHours(row.original.workHours)}
+        </span>
+      ),
+    },
+    {
+      id: "status",
+      header: "Status",
+      cell: ({ row }) => {
+        const status = statusConfig[row.original.status] || statusConfig.present
+        return (
+          <Badge variant={status.variant} className="h-5 px-2 py-0.5 rounded-2xl text-xs">
+            {status.label}
+          </Badge>
+        )
+      },
+    },
+    {
+      id: "actions",
+      cell: ({ row }) => (
+        <RowActionsMenu
+          entityType="attendance"
+          entityId={row.original.id}
+          entityName={`Attendance ${format(new Date(row.original.date), "MMM dd")}`}
+          detailUrl={`/my-attendance/${row.original.id}`}
+        />
+      ),
+    },
+  ], [])
 
   const table = useReactTable({
-    data,
+    data: attendanceData || [],
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -286,7 +204,6 @@ export default function MyAttendancePage() {
       sorting,
       columnFilters,
       globalFilter,
-      rowSelection,
     },
     initialState: {
       pagination: {
@@ -295,232 +212,268 @@ export default function MyAttendancePage() {
     },
   })
 
-  return (
-    <div>
-        <div className="mb-5">
-          <h1 className="text-xl font-semibold text-foreground leading-[1.35]">My Attendance</h1>
-        </div>
-
+  if (userLoading || isLoading) {
+    return (
+      <div className="space-y-5">
+        <Skeleton className="h-8 w-48" />
         <div className="rounded-[14px] border border-border bg-white overflow-hidden">
-          {/* Table Header */}
-          <div className="flex h-16 items-center justify-between border-b border-border px-5 py-2 bg-white">
-            <div className="flex items-center gap-3">
-              <div className="relative w-64">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Search"
-                  value={globalFilter ?? ""}
-                  onChange={(e) => setGlobalFilter(e.target.value)}
-                  className="h-[38px] border border-border pl-10 pr-3 text-sm"
-                />
-              </div>
-              <Button
-                variant="secondary"
-                size="sm"
-                className="h-[38px] border border-border gap-2"
-              >
-                <Filter className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium text-muted-foreground">Filter</span>
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                className="h-[38px] border border-border gap-2"
-              >
-                <ArrowUpDown className="h-5 w-5 text-muted-foreground" />
-                <span className="text-sm font-medium text-muted-foreground">Sort by</span>
-              </Button>
-            </div>
-            <div className="flex items-center gap-3">
-              <Button variant="secondary" size="sm" className="h-10 border border-border">
-                Download
-              </Button>
-              <Button variant="primary" size="sm" className="h-10" onClick={() => setIsRequestLeaveOpen(true)}>
-                Request for Leave
-              </Button>
-            </div>
+          <div className="p-6">
+            <Skeleton className="h-64 w-full" />
           </div>
+        </div>
+      </div>
+    )
+  }
 
-          {/* Table */}
-          <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  {table.getHeaderGroups().map((headerGroup) => (
-                    <TableRow
-                      key={headerGroup.id}
-                      className="border-b border-border bg-muted hover:bg-muted"
+  if (error) {
+    return (
+      <ErrorState
+        title="Failed to load attendance"
+        message="We couldn't load your attendance records. Please check your connection and try again."
+        onRetry={() => refetch()}
+      />
+    )
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-foreground leading-[1.35]">My Attendance</h1>
+          <p className="text-sm text-muted-foreground mt-1">Track your daily attendance and work hours</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCheckIn}
+            disabled={checkInMutation.isPending}
+          >
+            <LogIn className="h-4 w-4 mr-2" />
+            Check In
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCheckOut}
+            disabled={checkOutMutation.isPending}
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Check Out
+          </Button>
+        </div>
+      </div>
+
+      <div className="rounded-[14px] border border-border bg-white overflow-hidden">
+        {/* Table Header */}
+        <div className="flex h-16 items-center justify-between border-b border-border px-5 py-2 bg-white">
+          <div className="flex items-center gap-3">
+            <div className="relative w-64">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search"
+                value={globalFilter ?? ""}
+                onChange={(e) => setGlobalFilter(e.target.value)}
+                className="h-[38px] border border-border pl-10 pr-3 text-sm"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="h-[38px] w-[180px]">
+                <SelectValue placeholder="All Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="present">Present</SelectItem>
+                <SelectItem value="absent">Absent</SelectItem>
+                <SelectItem value="late">Late</SelectItem>
+                <SelectItem value="half-day">Half Day</SelectItem>
+                <SelectItem value="leave">Leave</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button variant="outline" size="sm" className="h-10" onClick={() => setIsRequestLeaveOpen(true)}>
+              Request Leave
+            </Button>
+          </div>
+        </div>
+
+        {/* Table */}
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow
+                  key={headerGroup.id}
+                  className="border-b border-border bg-muted hover:bg-muted"
+                >
+                  {headerGroup.headers.map((header) => (
+                    <TableHead
+                      key={header.id}
+                      className="h-10 px-3 text-sm font-medium text-muted-foreground tracking-[0.28px]"
                     >
-                      {headerGroup.headers.map((header) => (
-                        <TableHead
-                          key={header.id}
-                          className="h-10 px-3 text-sm font-medium text-muted-foreground tracking-[0.28px]"
-                          style={{ width: header.getSize() !== 150 ? `${header.getSize()}px` : undefined }}
-                        >
-                          {header.isPlaceholder
-                            ? null
-                            : header.column.getCanSort() ? (
-                                <button
-                                  className="flex items-center gap-1.5"
-                                  onClick={header.column.getToggleSortingHandler()}
-                                >
-                                  {flexRender(header.column.columnDef.header, header.getContext())}
-                                  {header.column.getIsSorted() === "asc" && (
-                                    <ArrowUpDown className="h-3 w-3" />
-                                  )}
-                                  {header.column.getIsSorted() === "desc" && (
-                                    <ArrowUpDown className="h-3 w-3 rotate-180" />
-                                  )}
-                                </button>
-                              ) : (
-                                flexRender(header.column.columnDef.header, header.getContext())
+                      {header.isPlaceholder
+                        ? null
+                        : header.column.getCanSort() ? (
+                            <button
+                              className="flex items-center gap-1.5"
+                              onClick={header.column.getToggleSortingHandler()}
+                            >
+                              {flexRender(header.column.columnDef.header, header.getContext())}
+                              {header.column.getIsSorted() === "asc" && (
+                                <ArrowUpDown className="h-3 w-3" />
                               )}
-                        </TableHead>
-                      ))}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody>
-                {table.getRowModel().rows?.length ? (
-                  table.getRowModel().rows.map((row) => (
-                    <TableRow
-                      key={row.id}
-                      className="border-b border-border hover:bg-transparent"
-                      data-state={row.getIsSelected() && "selected"}
-                    >
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell
-                          key={cell.id}
-                          className="h-16 px-3"
-                          style={{ width: cell.column.getSize() !== 150 ? `${cell.column.getSize()}px` : undefined }}
-                        >
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={columns.length} className="h-24 text-center">
-                      No results.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-
-          {/* Pagination */}
-          <div className="flex h-16 items-center justify-between border-t border-border px-5 py-4">
-            <p className="text-sm font-medium text-foreground tracking-[0.28px]">
-              Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to{" "}
-              {Math.min(
-                (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
-                table.getFilteredRowModel().rows.length
-              )}{" "}
-              of {table.getFilteredRowModel().rows.length} results
-            </p>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center border border-border rounded-lg overflow-hidden">
-                <div className="border-r border-border px-2 py-2">
-                  <span className="text-xs font-medium text-foreground tracking-[0.24px]">Per page</span>
-                </div>
-                <Select
-                  value={table.getState().pagination.pageSize.toString()}
-                  onValueChange={(value) => {
-                    table.setPageSize(Number(value))
-                  }}
-                >
-                  <SelectTrigger className="h-8 w-[60px] border-0 rounded-none focus:ring-0">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[10, 20, 30, 50].map((pageSize) => (
-                      <SelectItem key={pageSize} value={pageSize.toString()}>
-                        {pageSize}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => table.previousPage()}
-                  disabled={!table.getCanPreviousPage()}
-                  className="h-8 w-8 border border-border p-0"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </Button>
-                <div className="flex items-center border border-border rounded-lg overflow-hidden">
-                  {(() => {
-                    const pageIndex = table.getState().pagination.pageIndex
-                    const pageCount = table.getPageCount()
-                    const pages: (number | string)[] = []
-
-                    if (pageCount <= 5) {
-                      // Show all pages if 5 or fewer
-                      for (let i = 1; i <= pageCount; i++) {
-                        pages.push(i)
-                      }
-                    } else {
-                      // Always show first page
-                      pages.push(1)
-
-                      if (pageIndex < 2) {
-                        // Show 1, 2, 3, ..., last
-                        pages.push(2, 3)
-                        pages.push("...")
-                        pages.push(pageCount)
-                      } else if (pageIndex > pageCount - 3) {
-                        // Show 1, ..., last-2, last-1, last
-                        pages.push("...")
-                        pages.push(pageCount - 2, pageCount - 1, pageCount)
-                      } else {
-                        // Show 1, ..., current-1, current, current+1, ..., last
-                        pages.push("...")
-                        pages.push(pageIndex, pageIndex + 1, pageIndex + 2)
-                        pages.push("...")
-                        pages.push(pageCount)
-                      }
-                    }
-
-                    return pages.map((page, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => {
-                          if (typeof page === "number") {
-                            table.setPageIndex(page - 1)
-                          }
-                        }}
-                        disabled={typeof page === "string"}
-                        className={`h-8 w-8 border-r border-border last:border-r-0 text-xs font-medium transition-colors ${
-                          page === pageIndex + 1
-                            ? "bg-primary text-white font-semibold"
-                            : "text-foreground hover:bg-muted"
-                        } ${typeof page === "string" ? "cursor-default" : "cursor-pointer"}`}
+                              {header.column.getIsSorted() === "desc" && (
+                                <ArrowUpDown className="h-3 w-3 rotate-180" />
+                              )}
+                            </button>
+                          ) : (
+                            flexRender(header.column.columnDef.header, header.getContext())
+                          )}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    className="border-b border-border hover:bg-transparent"
+                    data-state={row.getIsSelected() && "selected"}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell
+                        key={cell.id}
+                        className="h-16 px-3"
                       >
-                        {page}
-                      </button>
-                    ))
-                  })()}
-                </div>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => table.nextPage()}
-                  disabled={!table.getCanNextPage()}
-                  className="h-8 w-8 border border-border p-0"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </Button>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={columns.length} className="h-24 text-center">
+                    <EmptyState
+                      icon={Clock}
+                      title="No attendance records"
+                      description="Your attendance records will appear here once you check in."
+                    />
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Pagination */}
+        <div className="flex h-16 items-center justify-between border-t border-border px-5 py-4">
+          <p className="text-sm font-medium text-foreground tracking-[0.28px]">
+            Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to{" "}
+            {Math.min(
+              (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
+              table.getFilteredRowModel().rows.length
+            )}{" "}
+            of {table.getFilteredRowModel().rows.length} results
+          </p>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center border border-border rounded-lg overflow-hidden">
+              <div className="border-r border-border px-2 py-2">
+                <span className="text-xs font-medium text-foreground tracking-[0.24px]">Per page</span>
               </div>
+              <Select
+                value={table.getState().pagination.pageSize.toString()}
+                onValueChange={(value) => {
+                  table.setPageSize(Number(value))
+                }}
+              >
+                <SelectTrigger className="h-8 w-[60px] border-0 rounded-none focus:ring-0">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[10, 20, 30, 50].map((pageSize) => (
+                    <SelectItem key={pageSize} value={pageSize.toString()}>
+                      {pageSize}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => table.previousPage()}
+                disabled={!table.getCanPreviousPage()}
+                className="h-8 w-8 border border-border p-0"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+              <div className="flex items-center border border-border rounded-lg overflow-hidden">
+                {(() => {
+                  const pageIndex = table.getState().pagination.pageIndex
+                  const pageCount = table.getPageCount()
+                  const pages: (number | string)[] = []
+
+                  if (pageCount <= 5) {
+                    for (let i = 1; i <= pageCount; i++) {
+                      pages.push(i)
+                    }
+                  } else {
+                    pages.push(1)
+
+                    if (pageIndex < 2) {
+                      pages.push(2, 3)
+                      pages.push("...")
+                      pages.push(pageCount)
+                    } else if (pageIndex > pageCount - 3) {
+                      pages.push("...")
+                      pages.push(pageCount - 2, pageCount - 1, pageCount)
+                    } else {
+                      pages.push("...")
+                      pages.push(pageIndex, pageIndex + 1, pageIndex + 2)
+                      pages.push("...")
+                      pages.push(pageCount)
+                    }
+                  }
+
+                  return pages.map((page, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        if (typeof page === "number") {
+                          table.setPageIndex(page - 1)
+                        }
+                      }}
+                      disabled={typeof page === "string"}
+                      className={`h-8 w-8 border-r border-border last:border-r-0 text-xs font-medium transition-colors ${
+                        page === pageIndex + 1
+                          ? "bg-primary text-white font-semibold"
+                          : "text-foreground hover:bg-muted"
+                      } ${typeof page === "string" ? "cursor-default" : "cursor-pointer"}`}
+                    >
+                      {page}
+                    </button>
+                  ))
+                })()}
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => table.nextPage()}
+                disabled={!table.getCanNextPage()}
+                className="h-8 w-8 border border-border p-0"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </Button>
             </div>
           </div>
         </div>
+      </div>
 
       <RequestLeaveDialog open={isRequestLeaveOpen} onOpenChange={setIsRequestLeaveOpen} />
     </div>
   )
 }
-

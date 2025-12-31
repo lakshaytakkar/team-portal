@@ -118,3 +118,4 @@ CREATE TABLE IF NOT EXISTS sales_automation_logs (
 CREATE INDEX IF NOT EXISTS idx_sales_automation_logs_entity ON sales_automation_logs(entity_type, entity_id);
 CREATE INDEX IF NOT EXISTS idx_sales_automation_logs_status ON sales_automation_logs(status);
 
+

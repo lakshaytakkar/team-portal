@@ -75,7 +75,7 @@ async function fetchTeamLeaveRequests(activeTab: 'pending' | 'team' | 'upcoming'
   if (teamMemberIds.length === 0) return []
   
   // Get all leave requests
-  const filter = activeTab === 'all' ? 'all' : activeTab === 'pending' ? 'pending' : activeTab === 'upcoming' ? 'active' : 'past'
+  const filter = activeTab === 'team' ? 'all' : activeTab === 'pending' ? 'pending' : activeTab === 'upcoming' ? 'active' : 'past'
   const allRequests = await getLeaveRequests(undefined, 'all', filter)
   
   // Filter to only team members

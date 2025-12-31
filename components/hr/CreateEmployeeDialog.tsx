@@ -57,7 +57,7 @@ export function CreateEmployeeDialog({ open, onOpenChange }: CreateEmployeeDialo
   // Fetch departments, managers, verticals, and roles
   const { data: departments = [] } = useQuery({
     queryKey: ["departments"],
-    queryFn: getDepartments,
+    queryFn: () => getDepartments(),
     enabled: open, // Only fetch when dialog is open
   })
 
@@ -69,7 +69,7 @@ export function CreateEmployeeDialog({ open, onOpenChange }: CreateEmployeeDialo
 
   const { data: verticals = [] } = useQuery({
     queryKey: ["verticals"],
-    queryFn: getVerticals,
+    queryFn: () => getVerticals(),
     enabled: open,
   })
 

@@ -47,7 +47,7 @@ export function DocumentPreviewDialog({
   const handleDownload = async () => {
     try {
       const url = await getDocumentUrl(document.id)
-      const link = document.createElement("a")
+      const link = window.document.createElement("a")
       link.href = url
       link.download = document.fileName
       window.document.body.appendChild(link)

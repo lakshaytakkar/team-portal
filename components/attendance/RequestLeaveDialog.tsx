@@ -60,6 +60,7 @@ export function RequestLeaveDialog({ open, onOpenChange }: RequestLeaveDialogPro
       
       // Invalidate and refetch leave requests
       queryClient.invalidateQueries({ queryKey: ["leave-requests"] })
+      queryClient.invalidateQueries({ queryKey: ["hr-leave-requests"] })
       
       onOpenChange(false)
       setFormData({
@@ -88,7 +89,7 @@ export function RequestLeaveDialog({ open, onOpenChange }: RequestLeaveDialogPro
       startDate: "",
       endDate: "",
       reason: "",
-      documents: "",
+      documents: [],
       coveragePlan: "",
       contactDuringLeave: "",
     })

@@ -34,6 +34,12 @@ export function Topbar({ breadcrumbs = [{ label: "Home" }, { label: "Dashboard" 
   const router = useRouter()
   const { user, isLoading } = useUserContext()
   const [logoutDialogOpen, setLogoutDialogOpen] = React.useState(false)
+  const [mounted, setMounted] = React.useState(false)
+
+  // Only render after client-side hydration to avoid hydration mismatches
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const handleLogout = async () => {
     try {
@@ -81,8 +87,8 @@ export function Topbar({ breadcrumbs = [{ label: "Home" }, { label: "Dashboard" 
         {user && <TopbarNotifications />}
         
         {/* Profile Menu or Sign In Button */}
-        {isLoading ? (
-          // Show loading state while checking authentication
+        {isLoading || !mounted ? (
+          // Show loading state while checking authentication or before hydration
           <div className="h-8 w-20 bg-muted animate-pulse rounded-md" />
         ) : user ? (
           // Show user menu when logged in

@@ -93,16 +93,16 @@ export default function RndResearchDocsPage() {
           </div>
         </div>
       </div>
+
       <div className="flex items-center justify-end gap-3">
-          <Button variant="outline" size="default" className="gap-2">
-            <FileDown className="h-4 w-4" />
-            Export
-          </Button>
-          <Button onClick={() => setIsCreateResearchDocOpen(true)} className="gap-2">
-            <Plus className="h-4 w-4" />
-            New Research Doc
-          </Button>
-        </div>
+        <Button variant="outline" size="default" className="gap-2">
+          <FileDown className="h-4 w-4" />
+          Export
+        </Button>
+        <Button onClick={() => setIsCreateResearchDocOpen(true)} className="gap-2">
+          <Plus className="h-4 w-4" />
+          New Research Doc
+        </Button>
       </div>
 
       <Card className="border border-border rounded-[14px]">

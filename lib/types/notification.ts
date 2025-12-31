@@ -30,6 +30,7 @@ export type NotificationType =
   | 'asset_assigned'
   | 'asset_returned'
   | 'asset_maintenance'
+  | 'reminder'
 
 export interface Notification {
   id: string

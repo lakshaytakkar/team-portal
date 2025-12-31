@@ -187,16 +187,16 @@ export default function RecruitmentDashboardPage() {
           </div>
         </div>
       </div>
+
       <div className="flex items-center justify-end gap-3">
-          <Button variant="outline" size="sm">
-            <Signal className="h-4 w-4 mr-2" />
-            Report
-          </Button>
-          <Button size="sm" onClick={() => router.push("/recruitment/job-postings")}>
-            <Plus className="h-4 w-4 mr-2" />
-            Post Job
-          </Button>
-        </div>
+        <Button variant="outline" size="sm">
+          <Signal className="h-4 w-4 mr-2" />
+          Report
+        </Button>
+        <Button size="sm" onClick={() => router.push("/recruitment/job-postings")}>
+          <Plus className="h-4 w-4 mr-2" />
+          Post Job
+        </Button>
       </div>
 
       {/* Metric Cards */}

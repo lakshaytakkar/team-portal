@@ -10,6 +10,7 @@
  * This component should ONLY be rendered when user.isSuperadmin === true
  */
 import * as React from "react"
+import { useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import {
@@ -90,17 +91,25 @@ export function VerticalSwitcher({ className }: VerticalSwitcherProps) {
   const { selectedVerticals, toggleVertical, setSelectedVerticals } = useVertical()
   const { selectedDepartments, toggleDepartment, setSelectedDepartments } = useDepartment()
   const [open, setOpen] = React.useState(false)
+  const [mounted, setMounted] = React.useState(false)
+
+  // Only render after client-side hydration to avoid hydration mismatches
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
   
   // Fetch organizations
   const { data: organizations = [], isLoading: isLoadingOrganizations } = useQuery({
     queryKey: ["organizations"],
     queryFn: getOrganizations,
+    enabled: mounted, // Only fetch after mount
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
   })
 
-  // Fetch verticals - filter by selected organizations (if any selected)
-  const { data: verticals = [], isLoading: isLoadingVerticals } = useQuery({
-    queryKey: ["verticals", selectedOrganizations],
-    queryFn: () => {
+  // Memoize verticals query function to prevent recreation
+  const fetchVerticalsFn = useMemo(() => {
+    return () => {
       // If organizations selected, filter verticals by those organizations
       // If no organizations selected, show all verticals
       if (selectedOrganizations.length > 0) {
@@ -117,13 +126,37 @@ export function VerticalSwitcher({ className }: VerticalSwitcherProps) {
         })
       }
       return getVerticals() // Show all if no org selected
-    },
+    }
+  }, [selectedOrganizations])
+
+  // Fetch verticals - filter by selected organizations (if any selected)
+  const { data: verticals = [], isLoading: isLoadingVerticals } = useQuery({
+    queryKey: ["verticals", selectedOrganizations],
+    queryFn: fetchVerticalsFn,
+    enabled: mounted, // Only fetch after mount
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
   })
 
-  // Fetch departments - show all for now (can be filtered by teams later)
+  // Memoize departments query function to prevent recreation
+  const fetchDepartmentsFn = useMemo(() => {
+    return () => {
+      // If verticals selected, filter departments by those verticals
+      // If no verticals selected, show all departments
+      if (selectedVerticals.length > 0) {
+        return getDepartments(selectedVerticals)
+      }
+      return getDepartments() // Show all if no vertical selected
+    }
+  }, [selectedVerticals])
+
+  // Fetch departments - filter by selected verticals (through teams)
   const { data: departments = [], isLoading: isLoadingDepartments } = useQuery({
-    queryKey: ["departments"],
-    queryFn: getDepartments,
+    queryKey: ["departments", selectedVerticals],
+    queryFn: fetchDepartmentsFn,
+    enabled: mounted, // Only fetch after mount
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
   })
 
   // Fetch department members for all departments at once
@@ -144,7 +177,7 @@ export function VerticalSwitcher({ className }: VerticalSwitcherProps) {
       )
       return membersMap
     },
-    enabled: departments.length > 0,
+    enabled: mounted && departments.length > 0, // Only fetch after mount and when departments exist
   })
 
   const handleToggleOrganization = React.useCallback((organizationId: string) => {
@@ -206,6 +239,28 @@ export function VerticalSwitcher({ className }: VerticalSwitcherProps) {
     : "All"
 
   const isLoading = isLoadingOrganizations || isLoadingVerticals || isLoadingDepartments
+
+  // Show placeholder before hydration to avoid hydration mismatches
+  if (!mounted) {
+    return (
+      <div className={cn(
+        "flex flex-1 gap-3 items-center w-full rounded-lg px-3 py-2 bg-muted/50",
+        className
+      )}>
+        <div className="relative shrink-0 size-8 bg-black rounded flex items-center justify-center">
+          <Building className="h-4 w-4 text-white" />
+        </div>
+        <div className="flex-1 min-w-0 text-left">
+          <p className="font-semibold leading-tight text-foreground text-base truncate">
+            Loading...
+          </p>
+          <p className="text-sm text-muted-foreground leading-tight truncate mt-0.5">
+            All
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -280,7 +335,11 @@ export function VerticalSwitcher({ className }: VerticalSwitcherProps) {
 
               {/* All Option */}
               <button
-                onClick={handleSelectAllOrganizations}
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  handleSelectAllOrganizations()
+                }}
                 className={cn(
                   "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-base outline-hidden transition-colors",
                   "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
@@ -311,7 +370,11 @@ export function VerticalSwitcher({ className }: VerticalSwitcherProps) {
                 return (
                   <button
                     key={organization.id}
-                    onClick={() => handleToggleOrganization(organization.id)}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      handleToggleOrganization(organization.id)
+                    }}
                     className={cn(
                       "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-base outline-hidden transition-colors",
                       "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
@@ -378,7 +441,11 @@ export function VerticalSwitcher({ className }: VerticalSwitcherProps) {
                 return (
                   <button
                     key={vertical.id}
-                    onClick={() => handleToggleVertical(vertical.id)}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      handleToggleVertical(vertical.id)
+                    }}
                     className={cn(
                       "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-base outline-hidden transition-colors",
                       "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
@@ -459,7 +526,11 @@ export function VerticalSwitcher({ className }: VerticalSwitcherProps) {
                 return (
                   <button
                     key={department.id}
-                    onClick={() => handleToggleDepartment(department.id)}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      handleToggleDepartment(department.id)
+                    }}
                     className={cn(
                       "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-base outline-hidden transition-colors",
                       "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",

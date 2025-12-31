@@ -5,6 +5,7 @@ export interface Activity {
   assignee?: string
   status: string
   date: string
+  href?: string
 }
 
 export interface TaskCompletionData {

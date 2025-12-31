@@ -79,9 +79,10 @@ export default function MyResourcesPage() {
             <p className="text-xs text-white/90 mt-0.5">Access external apps, credentials, and integrations</p>
           </div>
           <Button onClick={() => setIsAddResourceOpen(true)} variant="secondary" size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Resource
-        </Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Resource
+          </Button>
+        </div>
       </div>
 
       {/* Tabs */}

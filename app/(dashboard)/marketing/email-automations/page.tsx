@@ -96,9 +96,10 @@ export default function MarketingEmailAutomationsPage() {
             <p className="text-xs text-white/90 mt-0.5">Create automated email workflows triggered by lead events</p>
           </div>
           <Button onClick={() => setIsCreateAutomationOpen(true)} variant="secondary" size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          New Automation
-        </Button>
+            <Plus className="h-4 w-4 mr-2" />
+            New Automation
+          </Button>
+        </div>
       </div>
 
       <Card className="border border-border rounded-[14px]">

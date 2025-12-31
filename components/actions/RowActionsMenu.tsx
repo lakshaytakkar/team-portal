@@ -28,7 +28,8 @@ type EntityType =
   | "transaction" | "tax" | "sales-order" | "automation-log" | "suggestion" | "strategic-planning"
   | "whatsapp-template" | "new-vertical" | "whatsapp-automation" | "mindmap" | "page" | "drip"
   | "market-research" | "email-automation" | "application" | "email-template" | "financial-planning"
-  | "evaluation" | "job-role" | "interview" | "job-portal" | "onboarding" | "asset"
+  | "evaluation" | "job-role" | "interview" | "job-portal" | "onboarding" | "asset" | "organization"
+  | "leave-request" | "training" | "client" | "attendance" | "playlist" | "meeting-note" | "personal-document"
 
 interface RowActionsMenuProps {
   entityType: EntityType

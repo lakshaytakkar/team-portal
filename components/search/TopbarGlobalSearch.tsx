@@ -55,16 +55,17 @@ export function TopbarGlobalSearch() {
   const [callResults, setCallResults] = React.useState<SearchCallResult[]>([])
   const [candidateResults, setCandidateResults] = React.useState<SearchCandidateResult[]>([])
   const [recentSearches, setRecentSearches] = React.useState<string[]>([])
+  const [mounted, setMounted] = React.useState(false)
   const inputRef = React.useRef<HTMLInputElement>(null)
 
-
-  // Only show for superadmin
-  if (!user?.isSuperadmin) {
-    return null
-  }
+  // Only render after client-side hydration to avoid hydration mismatches
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Load recent searches from localStorage
   React.useEffect(() => {
+    if (!mounted) return
     try {
       const stored = localStorage.getItem(RECENT_SEARCHES_KEY)
       if (stored) {
@@ -73,7 +74,7 @@ export function TopbarGlobalSearch() {
     } catch (error) {
       console.error("Failed to load recent searches:", error)
     }
-  }, [])
+  }, [mounted])
 
   // Get pages from sidebar config
   const pages = React.useMemo(() => {
@@ -213,6 +214,26 @@ export function TopbarGlobalSearch() {
   const showQuickJumps = !hasQuery
   const showRecents = !hasQuery && recentSearches.length > 0
   const hasResults = showPages || showPeople || showTasks || showProjects || showDeals || showCalls || showCandidates
+
+  // Only show for superadmin
+  if (!user?.isSuperadmin) {
+    return null
+  }
+
+  // Show placeholder before hydration
+  if (!mounted) {
+    return (
+      <button
+        className="relative flex items-center gap-2 px-3 py-1.5 h-9 w-64 rounded-[10px] border border-border bg-background"
+        disabled
+      >
+        <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+        <span className="text-sm text-muted-foreground font-medium flex-1">
+          Search here...
+        </span>
+      </button>
+    )
+  }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

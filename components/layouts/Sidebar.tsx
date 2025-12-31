@@ -108,10 +108,10 @@ export function Sidebar({ user, isFilterHeaderCollapsed = false }: SidebarProps)
   const { selectedVerticals } = useVertical()
   const { selectedDepartments } = useDepartment()
   
-  // Only use selections for superadmin/CEO users
-  const effectiveSelectedOrganizations = (user?.isSuperadmin || user?.role === 'ceo') ? selectedOrganizations : undefined
-  const effectiveSelectedVerticals = (user?.isSuperadmin || user?.role === 'ceo') ? selectedVerticals : undefined
-  const effectiveSelectedDepartments = (user?.isSuperadmin || user?.role === 'ceo') ? selectedDepartments : undefined
+  // Only use selections for superadmin users
+  const effectiveSelectedOrganizations = user?.isSuperadmin ? selectedOrganizations : undefined
+  const effectiveSelectedVerticals = user?.isSuperadmin ? selectedVerticals : undefined
+  const effectiveSelectedDepartments = user?.isSuperadmin ? selectedDepartments : undefined
 
   // Detect current context
   const currentContext = React.useMemo(() => getSidebarContext(pathname), [pathname])

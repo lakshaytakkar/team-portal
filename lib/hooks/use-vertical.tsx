@@ -9,7 +9,7 @@
  * The vertical switcher functionality is completely hidden from non-superadmin users.
  */
 
-import { useState, useEffect, createContext, useContext, ReactNode } from "react"
+import { useState, useEffect, createContext, useContext, ReactNode, useMemo } from "react"
 
 const VERTICAL_STORAGE_KEY = "selected-vertical"
 
@@ -54,8 +54,15 @@ export function VerticalProvider({ children }: { children: ReactNode }) {
     })
   }
 
+  // Memoize context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => ({
+    selectedVerticals,
+    setSelectedVerticals,
+    toggleVertical,
+  }), [selectedVerticals])
+
   return (
-    <VerticalContext.Provider value={{ selectedVerticals, setSelectedVerticals, toggleVertical }}>
+    <VerticalContext.Provider value={contextValue}>
       {children}
     </VerticalContext.Provider>
   )

@@ -19,7 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { getVerticals, deleteVertical, updateVertical } from "@/lib/actions/hierarchy"
+import { getVerticals, deleteVertical, updateVertical, getOrganizations } from "@/lib/actions/hierarchy"
 import type { Vertical } from "@/lib/types/hierarchy"
 import { ErrorState } from "@/components/ui/error-state"
 import { EmptyState } from "@/components/ui/empty-state"

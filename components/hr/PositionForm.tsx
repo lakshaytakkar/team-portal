@@ -31,12 +31,12 @@ export function PositionForm({ employeeId, value, onChange, errors }: PositionFo
   // Fetch data
   const { data: verticals = [] } = useQuery({
     queryKey: ["verticals"],
-    queryFn: getVerticals,
+    queryFn: () => getVerticals(),
   })
 
   const { data: departments = [] } = useQuery({
     queryKey: ["departments"],
-    queryFn: getDepartments,
+    queryFn: () => getDepartments(),
   })
 
   const { data: roles = [] } = useQuery({

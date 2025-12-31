@@ -351,8 +351,8 @@ export default function RecruitmentApplicationsPage() {
                           </span>
                         </TableCell>
                         <TableCell className="flex-1 px-3 py-0">
-                          <Badge
-                            className="h-5 px-2 py-0.5 rounded-2xl text-xs font-medium leading-[18px] tracking-[0.12px] gap-1.5"
+                          <span
+                            className="inline-flex items-center h-5 px-2 py-0.5 rounded-2xl text-xs font-medium leading-[18px] tracking-[0.12px] gap-1.5"
                             style={{
                               backgroundColor: status.bgColor,
                               color: status.textColor,
@@ -362,7 +362,7 @@ export default function RecruitmentApplicationsPage() {
                           >
                             <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: status.textColor }} />
                             {status.label}
-                          </Badge>
+                          </span>
                         </TableCell>
                         <TableCell className="flex-1 px-3 py-0">
                           <span className="text-sm font-medium text-foreground leading-[1.5] tracking-[0.28px]" style={{ fontFamily: 'var(--font-inter-tight)' }}>

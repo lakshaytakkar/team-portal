@@ -30,7 +30,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
   // Fetch departments and managers
   const { data: departments = [] } = useQuery({
     queryKey: ["departments"],
-    queryFn: getDepartments,
+    queryFn: () => getDepartments(),
     enabled: open,
   })
 

@@ -1,0 +1,42 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e3]:
+    - link "folder-check Team Portal" [ref=e5] [cursor=pointer]:
+      - /url: /
+      - img "folder-check" [ref=e7]
+      - paragraph [ref=e8]: Team Portal
+    - generic [ref=e12]:
+      - generic [ref=e13]:
+        - img [ref=e16]
+        - generic [ref=e19]:
+          - heading "Welcome Back" [level=1] [ref=e20]
+          - paragraph [ref=e21]: Glad to see you again. Log in to your account.
+      - generic [ref=e22]:
+        - generic [ref=e23]:
+          - generic [ref=e24]: Email Address *
+          - textbox "Email Address *" [ref=e25]:
+            - /placeholder: Enter your email
+            - text: superadmin@test.com
+        - generic [ref=e26]:
+          - generic [ref=e27]: Password *
+          - generic [ref=e28]:
+            - textbox "Password *" [active] [ref=e29]:
+              - /placeholder: Enter your password
+              - text: superadmin123
+            - button [ref=e30] [cursor=pointer]:
+              - img [ref=e31]
+        - generic [ref=e34]:
+          - generic [ref=e35]:
+            - checkbox "Keep me login" [ref=e36] [cursor=pointer]
+            - checkbox
+            - generic [ref=e37]: Keep me login
+          - link "Forgot Password?" [ref=e38] [cursor=pointer]:
+            - /url: /forgot-password
+        - button "Login" [ref=e39] [cursor=pointer]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e45] [cursor=pointer]:
+    - img [ref=e46]
+  - alert [ref=e49]
+```

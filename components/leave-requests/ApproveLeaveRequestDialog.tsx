@@ -54,6 +54,7 @@ export function ApproveLeaveRequestDialog({
       }
 
       queryClient.invalidateQueries({ queryKey: ["leave-requests"] })
+      queryClient.invalidateQueries({ queryKey: ["hr-leave-requests"] })
       onOpenChange(false)
       setNotes("")
     } catch (error) {

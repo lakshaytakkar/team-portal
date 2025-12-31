@@ -36,7 +36,10 @@ import { ErrorState } from "@/components/ui/error-state"
 import { Skeleton } from "@/components/ui/skeleton"
 import { RowActionsMenu } from "@/components/actions/RowActionsMenu"
 import { CreateLeadDialog } from "@/components/sales/CreateLeadDialog"
+import { EditLeadDrawer } from "@/components/sales/EditLeadDrawer"
 import { getAvatarForUser } from "@/lib/utils/avatars"
+import { deleteLead } from "@/lib/actions/sales"
+import { useQueryClient } from "@tanstack/react-query"
 
 async function fetchLeads() {
   await new Promise((resolve) => setTimeout(resolve, 500))
@@ -61,15 +64,25 @@ const sourceConfig: Record<string, { label: string; variant: "default" | "second
 }
 
 export default function SalesLeadsPage() {
+  const queryClient = useQueryClient()
   const [searchQuery, setSearchQuery] = useState("")
   const [isCreateLeadOpen, setIsCreateLeadOpen] = useState(false)
+  const [isEditLeadOpen, setIsEditLeadOpen] = useState(false)
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
   const searchParams = useSearchParams()
   const viewMode = searchParams.get("view") || "team"
   const isMyView = viewMode === "my"
   const { data: leads, isLoading, error, refetch } = useQuery({
     queryKey: ["leads"],
     queryFn: fetchLeads,
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
   })
+
+  const handleDeleteLead = async (leadId: string) => {
+    await deleteLead(leadId)
+    await queryClient.invalidateQueries({ queryKey: ["leads"] })
+  }
 
   if (isLoading) {
     return (
@@ -135,7 +148,6 @@ export default function SalesLeadsPage() {
             </p>
           </div>
         </div>
-      </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -294,7 +306,12 @@ export default function SalesLeadsPage() {
                           detailUrl={`/sales/leads/${lead.id}`}
                           canView={true}
                           canEdit={true}
-                          canDelete={false}
+                          canDelete={true}
+                          onEdit={() => {
+                            setSelectedLead(lead)
+                            setIsEditLeadOpen(true)
+                          }}
+                          onDelete={() => handleDeleteLead(lead.id)}
                         />
                       </TableCell>
                     </TableRow>
@@ -321,6 +338,14 @@ export default function SalesLeadsPage() {
       </Card>
 
       <CreateLeadDialog open={isCreateLeadOpen} onOpenChange={setIsCreateLeadOpen} />
+      <EditLeadDrawer 
+        open={isEditLeadOpen} 
+        onOpenChange={(open) => {
+          setIsEditLeadOpen(open)
+          if (!open) setSelectedLead(null)
+        }} 
+        lead={selectedLead} 
+      />
     </div>
   )
 }

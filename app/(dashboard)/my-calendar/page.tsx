@@ -104,7 +104,7 @@ export default function MyCalendarPage() {
                 className={cn(
                   "px-3 py-1.5 rounded-md text-sm font-medium transition-colors capitalize",
                   view === v
-                    ? "bg-[#897EFA] text-white"
+                    ? "bg-primary text-white"
                     : "text-[#666D80] hover:bg-[#F6F8FA]"
                 )}
               >
@@ -285,7 +285,7 @@ function DayCell({
     >
       <div className="mb-2 flex items-center justify-end">
         {isToday ? (
-          <div className="flex h-[21px] w-[21px] items-center justify-center rounded bg-[#897EFA]">
+          <div className="flex h-[21px] w-[21px] items-center justify-center rounded bg-primary">
             <span className="text-[10px] font-semibold leading-[1.5] text-white">
               {day}
             </span>
@@ -320,9 +320,9 @@ function DayCell({
 // Event Badge Component
 function EventBadge({ event }: { event: CalendarEvent }) {
   const bgColor =
-    event.color === "primary" ? "bg-[#F3F2FF]" : "bg-[#FFF9E8]"
+    event.color === "primary" ? "bg-blue-50" : "bg-[#FFF9E8]"
   const borderColor =
-    event.color === "primary" ? "bg-[#897EFA]" : "bg-[#FAC515]"
+    event.color === "primary" ? "bg-primary" : "bg-[#FAC515]"
 
   return (
     <div className={cn("relative flex h-6 items-center rounded px-2", bgColor)}>
@@ -450,7 +450,7 @@ function WeekView({
                     <span className="text-sm font-medium text-[#0D0D12]">
                       {date.toLocaleDateString("en-US", { weekday: "short" })}
                     </span>
-                    <div className="flex h-[21px] w-[21px] items-center justify-center rounded bg-[#897EFA]">
+                    <div className="flex h-[21px] w-[21px] items-center justify-center rounded bg-primary">
                       <span className="text-sm font-medium leading-[1.5] text-white tracking-[0.28px]">
                         {date.getDate()}
                       </span>
@@ -519,7 +519,7 @@ function WeekView({
                             className={cn(
                               "relative flex flex-col rounded px-2 py-1",
                               event.color === "primary"
-                                ? "bg-[#F3F2FF]"
+                                ? "bg-blue-50"
                                 : "bg-[#FFF9E8]"
                             )}
                           >
@@ -674,7 +674,7 @@ function DayView({
                       key={event.id}
                       className={cn(
                         "relative flex flex-col rounded px-2 py-1",
-                        event.color === "primary" ? "bg-[#F3F2FF]" : "bg-[#FFF9E8]"
+                        event.color === "primary" ? "bg-blue-50" : "bg-[#FFF9E8]"
                       )}
                     >
                       <span className="text-[10px] font-medium leading-[1.5] text-[#A4ACB9] tracking-[0.2px]">

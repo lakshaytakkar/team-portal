@@ -79,6 +79,7 @@ export function EditLeaveRequestDialog({
       })
       
       queryClient.invalidateQueries({ queryKey: ["leave-requests"] })
+      queryClient.invalidateQueries({ queryKey: ["hr-leave-requests"] })
       onOpenChange(false)
     } catch (error) {
       console.error("Error updating leave request:", error)

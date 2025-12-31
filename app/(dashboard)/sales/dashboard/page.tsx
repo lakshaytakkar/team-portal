@@ -227,9 +227,9 @@ export default function SalesDashboardPage() {
           onRefresh={() => refetch()}
           className="h-[400px]"
         >
-          <div className="flex flex-col items-center justify-center h-full gap-6">
-            <ChartContainer config={pipelineChartConfig} className="w-full max-w-[232px] aspect-square">
-              <PieChart>
+          <div className="flex flex-col items-center justify-center h-full gap-2 pb-2">
+            <ChartContainer config={pipelineChartConfig} className="w-full h-[200px] max-w-[240px] !aspect-square">
+              <PieChart margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
                 <ChartTooltip
                   content={<ChartTooltipContent />}
                 />
@@ -237,8 +237,9 @@ export default function SalesDashboardPage() {
                   data={dashboard?.pipeline || []}
                   dataKey="count"
                   nameKey="stage"
-                  innerRadius={60}
-                  strokeWidth={5}
+                  innerRadius={45}
+                  outerRadius={70}
+                  strokeWidth={2}
                 >
                   <Label
                     content={({ viewBox }) => {
@@ -275,14 +276,14 @@ export default function SalesDashboardPage() {
                 </Pie>
               </PieChart>
             </ChartContainer>
-            <div className="flex gap-6 items-center justify-center flex-wrap">
+            <div className="flex gap-3 items-center justify-center flex-wrap px-2 pt-1">
               {(dashboard?.pipeline || []).map((item, index) => (
-                <div key={item.stage} className="flex gap-2 items-center">
+                <div key={item.stage} className="flex gap-1.5 items-center">
                   <div
-                    className="w-2 h-2 rounded-full"
+                    className="w-2 h-2 rounded-full shrink-0"
                     style={{ backgroundColor: PIPELINE_COLORS[index % PIPELINE_COLORS.length] }}
                   />
-                  <span className="text-sm font-medium text-foreground">
+                  <span className="text-xs font-medium text-foreground whitespace-nowrap">
                     {item.stage}
                   </span>
                 </div>

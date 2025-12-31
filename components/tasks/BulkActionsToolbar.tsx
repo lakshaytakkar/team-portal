@@ -110,7 +110,7 @@ export function BulkActionsToolbar({ selectedTaskIds, onClearSelection }: BulkAc
         </div>
         
         <div className="flex items-center gap-2 flex-wrap">
-          <Select value={bulkStatus} onValueChange={setBulkStatus}>
+          <Select value={bulkStatus} onValueChange={(value) => setBulkStatus(value as TaskStatus | "")}>
             <SelectTrigger className="w-[150px] h-9">
               <SelectValue placeholder="Update Status" />
             </SelectTrigger>
@@ -138,7 +138,7 @@ export function BulkActionsToolbar({ selectedTaskIds, onClearSelection }: BulkAc
             </Button>
           )}
           
-          <Select value={bulkPriority} onValueChange={setBulkPriority}>
+          <Select value={bulkPriority} onValueChange={(value) => setBulkPriority(value as TaskPriority | "")}>
             <SelectTrigger className="w-[150px] h-9">
               <SelectValue placeholder="Update Priority" />
             </SelectTrigger>

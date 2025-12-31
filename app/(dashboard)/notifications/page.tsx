@@ -221,12 +221,8 @@ export default function NotificationsPage() {
         </div>
         <ErrorState
           title="Failed to load notifications"
-          description={error instanceof Error ? error.message : "An error occurred"}
-          action={
-            <Button onClick={() => refetchNotifications()} variant="outline">
-              Try Again
-            </Button>
-          }
+          message={error instanceof Error ? error.message : "An error occurred"}
+          onRetry={() => refetchNotifications()}
         />
       </div>
     )

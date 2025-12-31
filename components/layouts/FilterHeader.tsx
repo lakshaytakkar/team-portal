@@ -198,7 +198,7 @@ export function FilterHeader({
         )}
         {/* CEO Toggle */}
         <div className="flex items-center gap-1.5 px-2 py-1 rounded-md border border-[#2a2a2a] bg-[#1a1a1a]">
-          <Crown className="h-3.5 w-3.5 text-[#897efa]" />
+          <Crown className="h-3.5 w-3.5 text-primary" />
           <Label htmlFor="ceo-toggle" className="text-sm font-medium text-[#e0e0e0] cursor-pointer whitespace-nowrap tracking-[0.28px]">
             CEO View
           </Label>
@@ -206,13 +206,13 @@ export function FilterHeader({
             id="ceo-toggle"
             checked={isCeoView}
             onCheckedChange={handleCeoViewToggleChange}
-            className="data-[state=checked]:bg-[#897efa]"
+            className="data-[state=checked]:bg-primary"
           />
         </div>
 
         {/* SuperAdmin Toggle */}
         <div className="flex items-center gap-1.5 px-2 py-1 rounded-md border border-[#2a2a2a] bg-[#1a1a1a]">
-          <Shield className="h-3.5 w-3.5 text-[#897efa]" />
+          <Shield className="h-3.5 w-3.5 text-primary" />
           <Label htmlFor="superadmin-toggle" className="text-sm font-medium text-[#e0e0e0] cursor-pointer whitespace-nowrap tracking-[0.28px]">
             SuperAdmin View
           </Label>
@@ -220,7 +220,7 @@ export function FilterHeader({
             id="superadmin-toggle"
             checked={isSuperAdminView}
             onCheckedChange={handleSuperAdminToggleChange}
-            className="data-[state=checked]:bg-[#897efa]"
+            className="data-[state=checked]:bg-primary"
           />
         </div>
 
@@ -242,8 +242,8 @@ export function FilterHeader({
                         value={vertical.id}
                         onClick={() => handleVerticalToggle(vertical.id)}
                         className={cn(
-                          "h-8 px-3 py-0 rounded-md text-sm font-medium leading-4 tracking-[0.28px] data-[state=active]:bg-[#897efa] data-[state=active]:text-white data-[state=inactive]:text-[#a0a0a0] data-[state=inactive]:font-medium transition-colors",
-                          isSelected && "bg-[#897efa]/20 text-[#897efa] border border-[#897efa]/40"
+                          "h-8 px-3 py-0 rounded-md text-sm font-medium leading-4 tracking-[0.28px] data-[state=active]:bg-primary data-[state=active]:text-white data-[state=inactive]:text-[#a0a0a0] data-[state=inactive]:font-medium transition-colors",
+                          isSelected && "bg-primary/20 text-primary border border-primary/40"
                         )}
                       >
                         {vertical.name}
@@ -281,8 +281,8 @@ export function FilterHeader({
                         value={team.id}
                         onClick={() => handleTeamToggle(team.id)}
                         className={cn(
-                          "h-8 px-3 py-0 rounded-md text-sm font-medium leading-4 tracking-[0.28px] data-[state=active]:bg-[#897efa] data-[state=active]:text-white data-[state=inactive]:text-[#a0a0a0] data-[state=inactive]:font-medium transition-colors",
-                          isSelected && "bg-[#897efa]/20 text-[#897efa] border border-[#897efa]/40"
+                          "h-8 px-3 py-0 rounded-md text-sm font-medium leading-4 tracking-[0.28px] data-[state=active]:bg-primary data-[state=active]:text-white data-[state=inactive]:text-[#a0a0a0] data-[state=inactive]:font-medium transition-colors",
+                          isSelected && "bg-primary/20 text-primary border border-primary/40"
                         )}
                       >
                         {team.name}
@@ -326,8 +326,8 @@ export function FilterHeader({
                       value={dept.value}
                       onClick={() => handleDepartmentToggle(dept.value)}
                       className={cn(
-                        "h-8 px-3 py-0 rounded-md text-sm font-medium leading-4 tracking-[0.28px] data-[state=active]:bg-[#897efa] data-[state=active]:text-white data-[state=inactive]:text-[#a0a0a0] data-[state=inactive]:font-medium transition-colors",
-                        isHrRecruitmentSelected && "bg-[#897efa]/20 text-[#897efa] border border-[#897efa]/40"
+                        "h-8 px-3 py-0 rounded-md text-sm font-medium leading-4 tracking-[0.28px] data-[state=active]:bg-primary data-[state=active]:text-white data-[state=inactive]:text-[#a0a0a0] data-[state=inactive]:font-medium transition-colors",
+                        isHrRecruitmentSelected && "bg-primary/20 text-primary border border-primary/40"
                       )}
                     >
                       {dept.label}
@@ -363,8 +363,8 @@ export function FilterHeader({
                     value={role.value}
                     onClick={() => handleRoleToggle(role.value)}
                     className={cn(
-                      "h-8 px-3 py-0 rounded-md text-sm font-medium leading-4 tracking-[0.28px] data-[state=active]:bg-[#897efa] data-[state=active]:text-white data-[state=inactive]:text-[#a0a0a0] data-[state=inactive]:font-medium transition-colors",
-                      selectedRoles.includes(role.value) && "bg-[#897efa]/20 text-[#897efa] border border-[#897efa]/40"
+                      "h-8 px-3 py-0 rounded-md text-sm font-medium leading-4 tracking-[0.28px] data-[state=active]:bg-primary data-[state=active]:text-white data-[state=inactive]:text-[#a0a0a0] data-[state=inactive]:font-medium transition-colors",
+                      selectedRoles.includes(role.value) && "bg-primary/20 text-primary border border-primary/40"
                     )}
                   >
                     {role.label}

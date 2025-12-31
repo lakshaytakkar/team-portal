@@ -8,7 +8,7 @@ export default function ColorsPage() {
     { name: "200", value: "#C9C4FD", label: "200" },
     { name: "300", value: "#B0A9FC", label: "300" },
     { name: "400", value: "#A198FB", label: "400" },
-    { name: "500", value: "#897EFA", label: "500" },
+    { name: "500", value: "#1e3a8a", label: "500" },
   ]
 
   const greyscaleColors = [

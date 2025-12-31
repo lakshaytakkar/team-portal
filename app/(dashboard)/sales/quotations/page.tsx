@@ -139,7 +139,6 @@ export default function SalesQuotationsPage() {
           </div>
         </div>
       </div>
-      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         <Card className="border border-border rounded-[14px] flex-1">

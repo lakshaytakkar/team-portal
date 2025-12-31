@@ -80,8 +80,9 @@ export default function VerticalsPage() {
           </div>
           <Button onClick={() => setCreateDialogOpen(true)} variant="secondary" size="sm">
             <Plus className="h-4 w-4 mr-2" />
-          New Vertical
-        </Button>
+            New Vertical
+          </Button>
+        </div>
       </div>
 
       <Card>

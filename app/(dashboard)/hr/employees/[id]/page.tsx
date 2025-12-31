@@ -322,7 +322,7 @@ export default function EmployeeDetailPage() {
           },
         ]}
         actions={
-          <Button>
+          <Button onClick={() => router.push(`/hr/employees/${employeeId}/edit`)}>
             <Edit className="h-4 w-4 mr-2" />
             Edit Employee
           </Button>

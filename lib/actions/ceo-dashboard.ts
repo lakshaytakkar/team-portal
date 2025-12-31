@@ -1,5 +1,6 @@
 'use server'
 
+import { cache } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { getUserFriendlyErrorMessage, logDatabaseError } from '@/lib/utils/errors'
 import type {
@@ -14,127 +15,161 @@ import type {
 // BUSINESS OVERVIEW METRICS
 // ============================================================================
 
-export async function getBusinessOverviewMetrics(): Promise<BusinessOverviewMetrics> {
-  const supabase = await createClient()
+// Cache the Supabase client creation to avoid recreating it multiple times
+const getCachedClient = cache(async () => {
+  return await createClient()
+})
 
-  try {
-    const now = new Date()
-    const startOfYear = new Date(now.getFullYear(), 0, 1)
-    const startOfLastYear = new Date(now.getFullYear() - 1, 0, 1)
-    const endOfLastYear = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59)
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59)
+// Cache the dashboard data fetching to deduplicate requests
+export const getCachedDashboardData = cache(async () => {
+  const supabase = await getCachedClient()
+  const now = new Date()
+  const startOfYear = new Date(now.getFullYear(), 0, 1)
+  const startOfLastYear = new Date(now.getFullYear() - 1, 0, 1)
+  const endOfLastYear = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59)
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+  const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+  const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59)
+  const startOfRange = new Date(now.getFullYear(), now.getMonth() - 11, 1)
+  const endOfRange = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
 
-    // Calculate ARR (Annual Recurring Revenue)
-    const { data: currentYearDeals } = await supabase
+  // Fetch ALL data in a single batch of parallel queries
+  const [
+    { data: allDeals },
+    { data: employees },
+    { data: projects },
+    { data: tasks },
+    { data: departments },
+  ] = await Promise.all([
+    // All deals for metrics, trends, and growth engines
+    supabase
       .from('deals')
-      .select('value')
-      .eq('stage', 'closed-won')
-      .gte('close_date', startOfYear.toISOString().split('T')[0])
-      .is('deleted_at', null)
-
-    const { data: lastYearDeals } = await supabase
-      .from('deals')
-      .select('value')
-      .eq('stage', 'closed-won')
+      .select('value, close_date, lead_id, stage')
       .gte('close_date', startOfLastYear.toISOString().split('T')[0])
-      .lte('close_date', endOfLastYear.toISOString().split('T')[0])
-      .is('deleted_at', null)
+      .is('deleted_at', null),
+    // All employees
+    supabase
+      .from('employees')
+      .select('id, status, hire_date')
+      .is('deleted_at', null),
+    // All projects
+    supabase
+      .from('projects')
+      .select('status, progress, due_date')
+      .is('deleted_at', null),
+    // Tasks for last month
+    supabase
+      .from('tasks')
+      .select('status, created_at')
+      .gte('created_at', startOfLastMonth.toISOString())
+      .is('deleted_at', null),
+    // Departments for growth engines
+    supabase
+      .from('departments')
+      .select('id, name')
+      .eq('is_active', true)
+      .is('deleted_at', null),
+  ])
 
-    const arrCurrent = currentYearDeals?.reduce((sum, deal) => sum + (Number(deal.value) || 0), 0) || 0
-    const arrLastYear = lastYearDeals?.reduce((sum, deal) => sum + (Number(deal.value) || 0), 0) || 0
+  return {
+    allDeals: allDeals || [],
+    employees: employees || [],
+    projects: projects || [],
+    tasks: tasks || [],
+    departments: departments || [],
+    dates: {
+      now,
+      startOfYear,
+      startOfLastYear,
+      endOfLastYear,
+      startOfMonth,
+      startOfLastMonth,
+      endOfLastMonth,
+      startOfRange,
+      endOfRange,
+    },
+  }
+})
+
+export async function getBusinessOverviewMetrics(): Promise<BusinessOverviewMetrics> {
+  try {
+    // Use cached data instead of fetching again
+    const { allDeals, employees, projects, tasks, dates } = await getCachedDashboardData()
+    const { now, startOfYear, startOfLastYear, endOfLastYear, startOfMonth, startOfLastMonth, endOfLastMonth } = dates
+
+    // Filter deals to closed-won only
+    const closedWonDeals = allDeals.filter((d) => d.stage === 'closed-won')
+
+    // Calculate ARR (Annual Recurring Revenue) - filter in memory
+    const currentYearDeals = closedWonDeals.filter(
+      (d) => d.close_date && new Date(d.close_date) >= startOfYear
+    )
+    const lastYearDeals = closedWonDeals.filter(
+      (d) => d.close_date && 
+        new Date(d.close_date) >= startOfLastYear && 
+        new Date(d.close_date) <= endOfLastYear
+    )
+
+    const arrCurrent = currentYearDeals.reduce((sum, deal) => sum + (Number(deal.value) || 0), 0)
+    const arrLastYear = lastYearDeals.reduce((sum, deal) => sum + (Number(deal.value) || 0), 0)
     const arrChange = arrLastYear > 0 ? ((arrCurrent - arrLastYear) / arrLastYear) * 100 : 0
 
-    // Calculate MRR (Monthly Recurring Revenue)
-    const { data: currentMonthDeals } = await supabase
-      .from('deals')
-      .select('value')
-      .eq('stage', 'closed-won')
-      .gte('close_date', startOfMonth.toISOString().split('T')[0])
-      .is('deleted_at', null)
+    // Calculate MRR (Monthly Recurring Revenue) - filter in memory
+    const currentMonthDeals = closedWonDeals.filter(
+      (d) => d.close_date && new Date(d.close_date) >= startOfMonth
+    )
+    const lastMonthDeals = closedWonDeals.filter(
+      (d) => d.close_date && 
+        new Date(d.close_date) >= startOfLastMonth && 
+        new Date(d.close_date) <= endOfLastMonth
+    )
 
-    const { data: lastMonthDeals } = await supabase
-      .from('deals')
-      .select('value')
-      .eq('stage', 'closed-won')
-      .gte('close_date', startOfLastMonth.toISOString().split('T')[0])
-      .lte('close_date', endOfLastMonth.toISOString().split('T')[0])
-      .is('deleted_at', null)
-
-    const mrrCurrent = currentMonthDeals?.reduce((sum, deal) => sum + (Number(deal.value) || 0), 0) || 0
-    const mrrLastMonth = lastMonthDeals?.reduce((sum, deal) => sum + (Number(deal.value) || 0), 0) || 0
+    const mrrCurrent = currentMonthDeals.reduce((sum, deal) => sum + (Number(deal.value) || 0), 0)
+    const mrrLastMonth = lastMonthDeals.reduce((sum, deal) => sum + (Number(deal.value) || 0), 0)
     const mrrChange = mrrLastMonth > 0 ? ((mrrCurrent - mrrLastMonth) / mrrLastMonth) * 100 : 0
 
-    // Calculate Employee Growth
-    const { data: currentEmployees } = await supabase
-      .from('employees')
-      .select('id')
-      .eq('status', 'active')
-      .is('deleted_at', null)
-
-    const { data: lastMonthEmployees } = await supabase
-      .from('employees')
-      .select('id, hire_date')
-      .eq('status', 'active')
-      .is('deleted_at', null)
-
-    const employeeCount = currentEmployees?.length || 0
-    const lastMonthCount = lastMonthEmployees?.filter(
-      (emp) => new Date(emp.hire_date) < endOfLastMonth
-    ).length || 0
+    // Calculate Employee Growth - filter in memory
+    const activeEmployees = employees.filter((e) => e.status === 'active')
+    const employeeCount = activeEmployees.length
+    const lastMonthCount = activeEmployees.filter(
+      (emp) => emp.hire_date && new Date(emp.hire_date) < endOfLastMonth
+    ).length
     const employeeChange = lastMonthCount > 0 ? ((employeeCount - lastMonthCount) / lastMonthCount) * 100 : 0
 
-    // Calculate Project Health
-    const { data: projects } = await supabase
-      .from('projects')
-      .select('status, progress')
-      .is('deleted_at', null)
-
-    const onTrack = projects?.filter((p) => p.status === 'active' && (p.progress || 0) >= 50).length || 0
-    const atRisk = projects?.filter((p) => p.status === 'active' && (p.progress || 0) < 50 && (p.progress || 0) > 0).length || 0
-    const blocked = projects?.filter((p) => p.status === 'on-hold' || p.status === 'cancelled').length || 0
-    const total = projects?.length || 0
+    // Calculate Project Health - filter in memory
+    const onTrack = projects.filter((p) => p.status === 'active' && (p.progress || 0) >= 50).length
+    const atRisk = projects.filter((p) => p.status === 'active' && (p.progress || 0) < 50 && (p.progress || 0) > 0).length
+    const blocked = projects.filter((p) => p.status === 'on-hold' || p.status === 'cancelled').length
+    const total = projects.length
     const projectHealthScore = total > 0 ? (onTrack / total) * 100 : 0
 
-    // Calculate Customer Growth (from leads converted to deals)
-    const { data: currentCustomers } = await supabase
-      .from('deals')
-      .select('lead_id')
-      .eq('stage', 'closed-won')
-      .gte('close_date', startOfMonth.toISOString().split('T')[0])
-      .is('deleted_at', null)
+    // Calculate Customer Growth (from leads converted to deals) - filter in memory
+    const currentCustomers = new Set(
+      currentMonthDeals.map((d) => d.lead_id).filter(Boolean)
+    )
+    const lastMonthCustomerSet = new Set(
+      lastMonthDeals.map((d) => d.lead_id).filter(Boolean)
+    )
 
-    const { data: lastMonthCustomers } = await supabase
-      .from('deals')
-      .select('lead_id')
-      .eq('stage', 'closed-won')
-      .gte('close_date', startOfLastMonth.toISOString().split('T')[0])
-      .lte('close_date', endOfLastMonth.toISOString().split('T')[0])
-      .is('deleted_at', null)
-
-    const customerCount = new Set(currentCustomers?.map((d) => d.lead_id).filter(Boolean) || []).size
-    const lastMonthCustomerCount = new Set(lastMonthCustomers?.map((d) => d.lead_id).filter(Boolean) || []).size
+    const customerCount = currentCustomers.size
+    const lastMonthCustomerCount = lastMonthCustomerSet.size
     const customerChange = lastMonthCustomerCount > 0 ? ((customerCount - lastMonthCustomerCount) / lastMonthCustomerCount) * 100 : 0
 
-    // Calculate Team Productivity (from tasks)
-    const { data: currentTasks } = await supabase
-      .from('tasks')
-      .select('status')
-      .gte('created_at', startOfMonth.toISOString())
-      .is('deleted_at', null)
+    // Calculate Team Productivity (from tasks) - filter in memory
+    const currentTasks = tasks.filter(
+      (t) => new Date(t.created_at) >= startOfMonth
+    )
+    const lastMonthTasks = tasks.filter(
+      (t) => {
+        const createdAt = new Date(t.created_at)
+        return createdAt >= startOfLastMonth && createdAt <= endOfLastMonth
+      }
+    )
 
-    const { data: lastMonthTasks } = await supabase
-      .from('tasks')
-      .select('status')
-      .gte('created_at', startOfLastMonth.toISOString())
-      .lte('created_at', endOfLastMonth.toISOString())
-      .is('deleted_at', null)
-
-    const currentCompleted = currentTasks?.filter((t) => t.status === 'completed').length || 0
-    const currentTotal = currentTasks?.length || 0
-    const lastMonthCompleted = lastMonthTasks?.filter((t) => t.status === 'completed').length || 0
-    const lastMonthTotal = lastMonthTasks?.length || 0
+    const currentCompleted = currentTasks.filter((t) => t.status === 'completed').length
+    const currentTotal = currentTasks.length
+    const lastMonthCompleted = lastMonthTasks.filter((t) => t.status === 'completed').length
+    const lastMonthTotal = lastMonthTasks.length
 
     const currentProductivity = currentTotal > 0 ? (currentCompleted / currentTotal) * 100 : 0
     const lastMonthProductivity = lastMonthTotal > 0 ? (lastMonthCompleted / lastMonthTotal) * 100 : 0
@@ -190,26 +225,21 @@ export async function getBusinessOverviewMetrics(): Promise<BusinessOverviewMetr
 // ============================================================================
 
 export async function getRisksAndAlerts(): Promise<RiskAlert[]> {
-  const supabase = await createClient()
   const alerts: RiskAlert[] = []
 
   try {
-    const now = new Date()
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const { allDeals, projects, dates } = await getCachedDashboardData()
+    const { now, startOfMonth } = dates
     const startOfQuarter = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1)
-    const startOfLastQuarter = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3 - 3, 1)
-    const endOfLastQuarter = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 0, 23, 59, 59)
+    const nextQuarterStart = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3 + 3, 1)
 
-    // Calculate Runway Alert
-    const { data: deals } = await supabase
-      .from('deals')
-      .select('value')
-      .eq('stage', 'closed-won')
-      .gte('close_date', startOfMonth.toISOString().split('T')[0])
-      .is('deleted_at', null)
+    // Filter deals to closed-won for current month
+    const closedWonDeals = allDeals.filter(
+      (d) => d.stage === 'closed-won' && d.close_date && new Date(d.close_date) >= startOfMonth
+    )
 
     // For now, use a simplified calculation. In production, you'd query actual expenses
-    const monthlyRevenue = deals?.reduce((sum, deal) => sum + (Number(deal.value) || 0), 0) || 0
+    const monthlyRevenue = closedWonDeals.reduce((sum, deal) => sum + (Number(deal.value) || 0), 0)
     const estimatedMonthlyExpenses = monthlyRevenue * 0.7 // Assume 70% expense ratio
     const estimatedCash = monthlyRevenue * 6 // Assume 6 months cash
     const runwayMonths = estimatedCash > 0 ? estimatedCash / estimatedMonthlyExpenses : 0
@@ -228,14 +258,11 @@ export async function getRisksAndAlerts(): Promise<RiskAlert[]> {
     }
 
     // Delayed Enterprise Deals (deals > $50k pushed to next quarter)
-    const nextQuarterStart = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3 + 3, 1)
-    const { data: delayedDeals } = await supabase
-      .from('deals')
-      .select('id, name, value, close_date')
-      .gt('value', 50000)
-      .gte('close_date', nextQuarterStart.toISOString().split('T')[0])
-      .in('stage', ['prospecting', 'qualification', 'proposal', 'negotiation'])
-      .is('deleted_at', null)
+    const delayedDeals = allDeals.filter(
+      (d) => Number(d.value) > 50000 &&
+        d.close_date && new Date(d.close_date) >= nextQuarterStart &&
+        ['prospecting', 'qualification', 'proposal', 'negotiation'].includes(d.stage || '')
+    )
 
     if (delayedDeals && delayedDeals.length > 0) {
       alerts.push({
@@ -251,17 +278,11 @@ export async function getRisksAndAlerts(): Promise<RiskAlert[]> {
     }
 
     // Projects At Risk
-    const { data: atRiskProjects } = await supabase
-      .from('projects')
-      .select('id, name, status, progress, due_date')
-      .eq('status', 'active')
-      .is('deleted_at', null)
-
-    const overdueProjects = atRiskProjects?.filter((p) => {
-      if (!p.due_date) return false
+    const overdueProjects = projects.filter((p) => {
+      if (!p.due_date || p.status !== 'active') return false
       const dueDate = new Date(p.due_date)
       return dueDate < now && (p.progress || 0) < 100
-    }) || []
+    })
 
     if (overdueProjects.length > 0) {
       alerts.push({
@@ -301,23 +322,16 @@ export async function getRisksAndAlerts(): Promise<RiskAlert[]> {
 // ============================================================================
 
 export async function getGrowthEngines(): Promise<GrowthEngine[]> {
-  const supabase = await createClient()
-
   try {
-    const now = new Date()
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59)
+    const { allDeals, employees, projects, tasks, dates } = await getCachedDashboardData()
+    const { startOfMonth, startOfLastMonth, endOfLastMonth } = dates
 
-    // Finance Engine
-    const { data: financeDeals } = await supabase
-      .from('deals')
-      .select('value')
-      .eq('stage', 'closed-won')
-      .gte('close_date', startOfMonth.toISOString().split('T')[0])
-      .is('deleted_at', null)
-
-    const monthlyRevenue = financeDeals?.reduce((sum, deal) => sum + (Number(deal.value) || 0), 0) || 0
+    // Finance Engine - filter in memory
+    const closedWonDeals = allDeals.filter((d) => d.stage === 'closed-won')
+    const financeDeals = closedWonDeals.filter(
+      (d) => d.close_date && new Date(d.close_date) >= startOfMonth
+    )
+    const monthlyRevenue = financeDeals.reduce((sum, deal) => sum + (Number(deal.value) || 0), 0)
     const estimatedExpenses = monthlyRevenue * 0.7
     const burnRate = estimatedExpenses
     const estimatedCash = monthlyRevenue * 6
@@ -349,25 +363,17 @@ export async function getGrowthEngines(): Promise<GrowthEngine[]> {
       ],
     }
 
-    // Sales Engine
-    const { data: pipelineDeals } = await supabase
-      .from('deals')
-      .select('value, stage')
-      .in('stage', ['prospecting', 'qualification', 'proposal', 'negotiation'])
-      .is('deleted_at', null)
-
-    const { data: allDeals } = await supabase
-      .from('deals')
-      .select('stage, value')
-      .is('deleted_at', null)
-
-    const pipelineValue = pipelineDeals?.reduce((sum, deal) => sum + (Number(deal.value) || 0), 0) || 0
-    const totalDeals = allDeals?.length || 0
-    const wonDeals = allDeals?.filter((d) => d.stage === 'closed-won').length || 0
+    // Sales Engine - filter in memory
+    const pipelineDeals = allDeals.filter((d) =>
+      ['prospecting', 'qualification', 'proposal', 'negotiation'].includes(d.stage || '')
+    )
+    const totalDeals = allDeals.length
+    const wonDeals = closedWonDeals.length
     const winRate = totalDeals > 0 ? (wonDeals / totalDeals) * 100 : 0
 
-    const strategicDeals = pipelineDeals?.filter((d) => Number(d.value) > 50000).length || 0
-    const strategicPercent = pipelineDeals && pipelineDeals.length > 0 ? (strategicDeals / pipelineDeals.length) * 100 : 0
+    const pipelineValue = pipelineDeals.reduce((sum, deal) => sum + (Number(deal.value) || 0), 0)
+    const strategicDeals = pipelineDeals.filter((d) => Number(d.value) > 50000).length
+    const strategicPercent = pipelineDeals.length > 0 ? (strategicDeals / pipelineDeals.length) * 100 : 0
 
     const salesEngine: GrowthEngine = {
       department: 'sales',
@@ -395,14 +401,9 @@ export async function getGrowthEngines(): Promise<GrowthEngine[]> {
       ],
     }
 
-    // HR Engine
-    const { data: employees } = await supabase
-      .from('employees')
-      .select('id, status, hire_date')
-      .is('deleted_at', null)
-
-    const activeEmployees = employees?.filter((e) => e.status === 'active').length || 0
-    const totalEmployees = employees?.length || 0
+    // HR Engine - filter in memory
+    const activeEmployees = employees.filter((e) => e.status === 'active').length
+    const totalEmployees = employees.length
     const retentionRate = totalEmployees > 0 ? (activeEmployees / totalEmployees) * 100 : 0
 
     const hrEngine: GrowthEngine = {
@@ -431,25 +432,13 @@ export async function getGrowthEngines(): Promise<GrowthEngine[]> {
       ],
     }
 
-    // Operations Engine
-    const { data: projects } = await supabase
-      .from('projects')
-      .select('status, due_date')
-      .is('deleted_at', null)
-
-    const { data: tasks } = await supabase
-      .from('tasks')
-      .select('status, created_at')
-      .gte('created_at', startOfLastMonth.toISOString())
-      .lte('created_at', endOfLastMonth.toISOString())
-      .is('deleted_at', null)
-
-    const completedProjects = projects?.filter((p) => p.status === 'completed').length || 0
-    const totalProjects = projects?.length || 0
+    // Operations Engine - filter in memory
+    const completedProjects = projects.filter((p) => p.status === 'completed').length
+    const totalProjects = projects.length
     const completionRate = totalProjects > 0 ? (completedProjects / totalProjects) * 100 : 0
 
-    const completedTasks = tasks?.filter((t) => t.status === 'completed').length || 0
-    const taskVelocity = completedTasks || 0
+    const completedTasks = tasks.filter((t) => t.status === 'completed').length
+    const taskVelocity = completedTasks
 
     const operationsEngine: GrowthEngine = {
       department: 'operations',
@@ -489,27 +478,35 @@ export async function getGrowthEngines(): Promise<GrowthEngine[]> {
 // ============================================================================
 
 export async function getRevenueTrends(period: 'monthly' | 'quarterly' | 'yearly' = 'monthly'): Promise<RevenueTrends> {
-  const supabase = await createClient()
-
   try {
-    const now = new Date()
+    const { allDeals, dates } = await getCachedDashboardData()
+    const { now, startOfRange, endOfRange } = dates
     const dataPoints: RevenueTrends['arr'] = []
+
+    // Filter to closed-won deals in the date range
+    const closedWonDeals = allDeals.filter(
+      (d) => d.stage === 'closed-won' &&
+        d.close_date &&
+        new Date(d.close_date) >= startOfRange &&
+        new Date(d.close_date) <= endOfRange
+    )
+
+    // Group deals by month
+    const revenueByMonth = new Map<string, number>()
+    
+    for (const deal of closedWonDeals) {
+      if (!deal.close_date) continue
+      const dealDate = new Date(deal.close_date)
+      const monthKey = `${dealDate.getFullYear()}-${String(dealDate.getMonth() + 1).padStart(2, '0')}`
+      const value = Number(deal.value) || 0
+      revenueByMonth.set(monthKey, (revenueByMonth.get(monthKey) || 0) + value)
+    }
 
     // Generate data points for the last 12 months
     for (let i = 11; i >= 0; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
-      const startOfPeriod = new Date(date.getFullYear(), date.getMonth(), 1)
-      const endOfPeriod = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59)
-
-      const { data: deals } = await supabase
-        .from('deals')
-        .select('value')
-        .eq('stage', 'closed-won')
-        .gte('close_date', startOfPeriod.toISOString().split('T')[0])
-        .lte('close_date', endOfPeriod.toISOString().split('T')[0])
-        .is('deleted_at', null)
-
-      const revenue = deals?.reduce((sum, deal) => sum + (Number(deal.value) || 0), 0) || 0
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+      const revenue = revenueByMonth.get(monthKey) || 0
 
       // Simple forecast: assume 10% growth
       const forecasted = revenue * 1.1
@@ -544,24 +541,13 @@ export async function getRevenueTrends(period: 'monthly' | 'quarterly' | 'yearly
 // ============================================================================
 
 export async function getDepartmentPerformance(): Promise<DepartmentPerformance[]> {
-  const supabase = await createClient()
-
   try {
-    const { data: departments } = await supabase
-      .from('departments')
-      .select('id, name')
-      .eq('is_active', true)
-      .is('deleted_at', null)
+    const { departments, employees, projects } = await getCachedDashboardData()
 
     const performance: DepartmentPerformance[] = []
+    const activeEmployees = employees.filter((e) => e.status === 'active')
 
-    for (const dept of departments || []) {
-      const { data: employees } = await supabase
-        .from('employees')
-        .select('id')
-        .eq('status', 'active')
-        .is('deleted_at', null)
-
+    for (const dept of departments) {
       // Simplified performance calculation
       const performanceScore = Math.random() * 40 + 60 // 60-100 range
 
@@ -569,8 +555,8 @@ export async function getDepartmentPerformance(): Promise<DepartmentPerformance[
         department: dept.name,
         performance: performanceScore,
         metrics: [
-          { label: 'Employees', value: employees?.length || 0 },
-          { label: 'Projects', value: Math.floor(Math.random() * 10) + 5 },
+          { label: 'Employees', value: activeEmployees.length },
+          { label: 'Projects', value: projects.length },
         ],
       })
     }

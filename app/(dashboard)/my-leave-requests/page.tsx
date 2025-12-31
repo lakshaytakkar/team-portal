@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useState, useMemo } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   useReactTable,
   getCoreRowModel,
@@ -45,6 +45,7 @@ import { toast } from "@/components/ui/sonner"
 import { format } from "date-fns"
 import { useUser } from "@/lib/hooks/useUser"
 import { canViewAllLeaveRequests } from "@/lib/utils/permissions"
+import { exportToCSV, generateExportFilename, type ColumnDefinition } from "@/lib/utils/exports"
 
 const typeLabels = {
   vacation: "Vacation",
@@ -66,7 +67,8 @@ async function fetchLeaveRequests(viewMode: 'my' | 'all', activeTab: 'active' | 
 }
 
 export default function MyLeaveRequestsPage() {
-  const { user } = useUser()
+  const { user, isLoading: userLoading } = useUser()
+  const queryClient = useQueryClient()
   const [viewMode, setViewMode] = useState<'my' | 'all'>('my')
   const [activeTab, setActiveTab] = useState<'active' | 'past' | 'pending' | 'all'>('active')
   const [isRequestLeaveOpen, setIsRequestLeaveOpen] = useState(false)
@@ -82,18 +84,41 @@ export default function MyLeaveRequestsPage() {
   const canViewAll = user ? canViewAllLeaveRequests(user.role, user.department) : false
   const currentUserId = user?.id || ''
 
-  // Determine view mode based on permissions
+  // Set default view mode based on permissions
   React.useEffect(() => {
     if (canViewAll && viewMode === 'my') {
-      // Default to 'all' if user has permissions
-      // But allow them to toggle
+      // Allow user to toggle, but default could be 'all' if desired
+      // For now, keep it as 'my' by default
     }
   }, [canViewAll, viewMode])
 
   const { data: leaveRequests, isLoading, error, refetch } = useQuery({
     queryKey: ["leave-requests", viewMode, activeTab, currentUserId],
-    queryFn: () => fetchLeaveRequests(viewMode, activeTab, currentUserId),
-    enabled: !!currentUserId,
+    queryFn: async () => {
+      console.log('My Leave Requests Query Executing...', { viewMode, activeTab, currentUserId })
+      try {
+        const result = await fetchLeaveRequests(viewMode, activeTab, currentUserId)
+        console.log('My Leave Requests Query Result:', result?.length || 0, result)
+        return result
+      } catch (err) {
+        console.error('Error fetching leave requests:', err)
+        throw err
+      }
+    },
+    enabled: !userLoading && !!user,
+    retry: 1,
+    staleTime: 30 * 1000, // Consider data fresh for 30 seconds
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+  })
+  
+  console.log('My Leave Requests Query State:', { 
+    isLoading, 
+    hasData: !!leaveRequests, 
+    dataLength: leaveRequests?.length || 0,
+    error: error?.message,
+    userLoading,
+    hasUser: !!user,
+    currentUserId,
   })
 
   const columns = useMemo<ColumnDef<LeaveRequest>[]>(() => {
@@ -190,7 +215,8 @@ export default function MyLeaveRequestsPage() {
                 try {
                   await cancelLeaveRequest(request.id)
                   toast.success("Leave request cancelled")
-                  refetch()
+                  queryClient.invalidateQueries({ queryKey: ["leave-requests"] })
+                  queryClient.invalidateQueries({ queryKey: ["hr-leave-requests"] })
                 } catch (error) {
                   toast.error("Failed to cancel leave request")
                 }
@@ -210,7 +236,8 @@ export default function MyLeaveRequestsPage() {
                       try {
                         await cancelLeaveRequest(request.id)
                         toast.success("Leave request cancelled")
-                        refetch()
+                        queryClient.invalidateQueries({ queryKey: ["leave-requests"] })
+                        queryClient.invalidateQueries({ queryKey: ["hr-leave-requests"] })
                       } catch (error) {
                         toast.error("Failed to cancel leave request")
                       }
@@ -245,7 +272,7 @@ export default function MyLeaveRequestsPage() {
     )
 
     return baseColumns
-  }, [viewMode, currentUserId, canViewAll, refetch])
+  }, [viewMode, currentUserId, canViewAll, queryClient])
 
   const table = useReactTable({
     data: leaveRequests || [],
@@ -269,31 +296,6 @@ export default function MyLeaveRequestsPage() {
     },
   })
 
-  if (isLoading) {
-    return (
-      <div className="space-y-5">
-        <div className="bg-primary/85 text-primary-foreground rounded-md px-4 py-3">
-          <Skeleton className="h-6 w-48" />
-        </div>
-        <Card className="border border-border rounded-[14px]">
-          <div className="p-12">
-            <Skeleton className="h-64 w-full" />
-          </div>
-        </Card>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <ErrorState
-        title="Failed to load leave requests"
-        message="We couldn't load leave requests. Please check your connection and try again."
-        onRetry={() => refetch()}
-      />
-    )
-  }
-
   const stats = useMemo(() => {
     const requests = leaveRequests || []
     return {
@@ -302,6 +304,98 @@ export default function MyLeaveRequestsPage() {
       approved: requests.filter(r => r.status === 'approved').length,
     }
   }, [leaveRequests])
+
+  // Prepare export data
+  const exportData = useMemo(() => {
+    if (!leaveRequests) return []
+    return leaveRequests.map((request) => ({
+      employee: viewMode === 'all' ? request.user?.name || 'Unknown' : user?.name || 'Unknown',
+      email: viewMode === 'all' ? request.user?.email || '' : user?.email || '',
+      type: typeLabels[request.type],
+      startDate: format(new Date(request.startDate), 'MMM dd, yyyy'),
+      endDate: format(new Date(request.endDate), 'MMM dd, yyyy'),
+      days: request.days,
+      status: statusConfig[request.status].label,
+      reason: request.reason || '',
+      approvedBy: request.approvedBy?.name || '',
+      approvedAt: request.approvedAt ? format(new Date(request.approvedAt), 'MMM dd, yyyy') : '',
+      createdAt: format(new Date(request.createdAt), 'MMM dd, yyyy'),
+    }))
+  }, [leaveRequests, viewMode, user])
+
+  // Temporarily removed loading/error checks to debug hooks issue
+  // if (userLoading || !user) {
+  //   return (
+  //     <div className="space-y-5">
+  //       <div className="bg-primary/85 text-primary-foreground rounded-md px-4 py-3">
+  //         <Skeleton className="h-6 w-48" />
+  //       </div>
+  //       <Card className="border border-border rounded-[14px]">
+  //         <div className="p-12">
+  //           <Skeleton className="h-64 w-full" />
+  //         </div>
+  //       </Card>
+  //     </div>
+  //   )
+  // }
+
+  // if (isLoading) {
+  //   return (
+  //     <div className="space-y-5">
+  //       <div className="bg-primary/85 text-primary-foreground rounded-md px-4 py-3">
+  //         <Skeleton className="h-6 w-48" />
+  //       </div>
+  //       <Card className="border border-border rounded-[14px]">
+  //         <div className="p-12">
+  //           <Skeleton className="h-64 w-full" />
+  //         </div>
+  //       </Card>
+  //     </div>
+  //   )
+  // }
+
+  // if (error) {
+  //   const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+  //   console.error('Leave requests query error:', error)
+  //   return (
+  //     <ErrorState
+  //       title="Failed to load leave requests"
+  //       message={`We couldn't load leave requests. ${errorMessage.includes('permission') || errorMessage.includes('policy') ? 'This might be due to missing RLS policies. Please ensure the database migration has been applied.' : 'Please check your connection and try again.'}`}
+  //       onRetry={() => refetch()}
+  //     />
+  //   )
+  // }
+
+  const exportColumns: ColumnDefinition[] = [
+    ...(viewMode === 'all' ? [
+      { key: 'employee', label: 'Employee' },
+      { key: 'email', label: 'Email' },
+    ] : []),
+    { key: 'type', label: 'Leave Type' },
+    { key: 'startDate', label: 'Start Date' },
+    { key: 'endDate', label: 'End Date' },
+    { key: 'days', label: 'Days' },
+    { key: 'status', label: 'Status' },
+    { key: 'reason', label: 'Reason' },
+    { key: 'approvedBy', label: 'Approved By' },
+    { key: 'approvedAt', label: 'Approved At' },
+    { key: 'createdAt', label: 'Created At' },
+  ]
+
+  const handleExport = async () => {
+    if (exportData.length === 0) {
+      toast.error("No data to export")
+      return
+    }
+    try {
+      const filename = generateExportFilename('my-leave-requests', viewMode === 'all' ? 'all-leave-requests' : 'my-leave-requests')
+      await exportToCSV(exportData, exportColumns, filename)
+      toast.success("Leave requests exported successfully")
+    } catch (error) {
+      console.error('Error exporting leave requests:', error)
+      toast.error("Failed to export leave requests")
+    }
+  }
 
   return (
     <div className="space-y-5">
@@ -406,7 +500,13 @@ export default function MyLeaveRequestsPage() {
             </Button>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="secondary" size="sm" className="h-10 border border-border">
+            <Button 
+              variant="secondary" 
+              size="sm" 
+              className="h-10 border border-border"
+              onClick={handleExport}
+              disabled={!leaveRequests || leaveRequests.length === 0}
+            >
               <FileDown className="h-4 w-4 mr-2" />
               Export
             </Button>
@@ -508,7 +608,8 @@ export default function MyLeaveRequestsPage() {
                 await cancelLeaveRequest(selectedRequest.id)
                 toast.success("Leave request cancelled")
                 setDetailDialogOpen(false)
-                refetch()
+                queryClient.invalidateQueries({ queryKey: ["leave-requests"] })
+                queryClient.invalidateQueries({ queryKey: ["hr-leave-requests"] })
               } catch (error) {
                 toast.error("Failed to cancel leave request")
               }

@@ -9,7 +9,7 @@
  * The organization switcher functionality is completely hidden from non-superadmin/CEO users.
  */
 
-import { useState, useEffect, createContext, useContext, ReactNode } from "react"
+import { useState, useEffect, createContext, useContext, ReactNode, useMemo } from "react"
 import { useUser } from "./useUser"
 
 const ORGANIZATION_STORAGE_KEY = "selected-organization"
@@ -66,9 +66,13 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
   }
 
   // For non-superadmin/CEO, provide a dummy context that doesn't affect state
-  const contextValue = (user?.role === 'superadmin')
-    ? { selectedOrganizations, setSelectedOrganizations, toggleOrganization }
-    : { selectedOrganizations: [], setSelectedOrganizations: () => {}, toggleOrganization: () => {} }
+  // Memoize context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => {
+    if (user?.role === 'superadmin') {
+      return { selectedOrganizations, setSelectedOrganizations, toggleOrganization }
+    }
+    return { selectedOrganizations: [], setSelectedOrganizations: () => {}, toggleOrganization: () => {} }
+  }, [user?.role, selectedOrganizations])
 
   return (
     <OrganizationContext.Provider value={contextValue}>

@@ -189,28 +189,29 @@ function TaskRow({ task, level, expandedRows, onToggleExpand, onEdit, onStatusUp
           )}
         </TableCell>
         <TableCell>
-          <Select
-            value={task.status}
-            onValueChange={(value: TaskStatus) => {
-              if (onStatusUpdate) {
-                onStatusUpdate(task.id, value)
-              }
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <SelectTrigger className="w-[140px] h-7 border-0 p-0 bg-transparent hover:bg-muted/50">
-              <Badge variant={status.variant} size="sm" className="cursor-pointer">
-                {status.label}
-              </Badge>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="not-started">Not Started</SelectItem>
-              <SelectItem value="in-progress">In Progress</SelectItem>
-              <SelectItem value="in-review">In Review</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="blocked">Blocked</SelectItem>
-            </SelectContent>
-          </Select>
+          <div onClick={(e) => e.stopPropagation()}>
+            <Select
+              value={task.status}
+              onValueChange={(value: TaskStatus) => {
+                if (onStatusUpdate) {
+                  onStatusUpdate(task.id, value)
+                }
+              }}
+            >
+              <SelectTrigger className="w-[140px] h-7 border-0 p-0 bg-transparent hover:bg-muted/50">
+                <Badge variant={status.variant} size="sm" className="cursor-pointer">
+                  {status.label}
+                </Badge>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="not-started">Not Started</SelectItem>
+                <SelectItem value="in-progress">In Progress</SelectItem>
+                <SelectItem value="in-review">In Review</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="blocked">Blocked</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </TableCell>
         <TableCell>
           <Badge variant={priority.variant} size="sm">

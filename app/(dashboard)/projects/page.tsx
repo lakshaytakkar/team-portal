@@ -161,7 +161,7 @@ function ProjectCard({ project, onEdit, onDelete }: { project: Project; onEdit?:
                   onDelete={onDelete}
                   canView={true}
                   canEdit={true}
-                  canDelete={false}
+                  canDelete={true}
                 />
               </div>
             </div>
@@ -234,6 +234,8 @@ export default function ProjectsPage() {
   const { data: projects, isLoading, error, refetch } = useQuery({
     queryKey: ["projects"],
     queryFn: fetchProjects,
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
   })
 
   const handleEditProject = (project: Project) => {

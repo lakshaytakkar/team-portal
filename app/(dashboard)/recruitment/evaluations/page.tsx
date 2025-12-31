@@ -207,12 +207,12 @@ export default function RecruitmentEvaluationsPage() {
           </div>
         </div>
       </div>
+
       <div className="flex items-center justify-end gap-3">
-          <Button variant="outline" size="default" className="gap-2">
-            <FileDown className="h-4 w-4" />
-            Export
-          </Button>
-        </div>
+        <Button variant="outline" size="default" className="gap-2">
+          <FileDown className="h-4 w-4" />
+          Export
+        </Button>
       </div>
 
       {/* Metrics Cards as Filters */}

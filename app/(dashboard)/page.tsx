@@ -163,13 +163,13 @@ export default function MainDashboardPage() {
   return (
     <div className="space-y-6">
       <DashboardHeader
-        title={isSuperadmin ? "Executive Dashboard" : "Dashboard"}
+        title={user?.isSuperadmin ? "Executive Dashboard" : "Dashboard"}
         onManageDashboard={() => {}}
         onExport={() => {}}
       />
 
       {/* Executive KPIs - For superadmin */}
-      {isSuperadmin ? (
+      {user?.isSuperadmin ? (
         <ExecutiveKPIs
           data={{
             revenue: {
@@ -244,7 +244,7 @@ export default function MainDashboardPage() {
       )}
 
       {/* Quick Links */}
-      <QuickLinks maxItems={isSuperadmin ? 15 : 8} />
+      <QuickLinks maxItems={user?.isSuperadmin ? 15 : 8} />
 
       {/* Charts and Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -304,9 +304,9 @@ export default function MainDashboardPage() {
           onRefresh={() => refetch()}
           className="h-[400px]"
         >
-          <div className="flex flex-col items-center justify-center h-full gap-6">
-            <ChartContainer config={projectChartConfig} className="w-full max-w-[232px] aspect-square">
-              <PieChart>
+          <div className="flex flex-col items-center justify-center h-full gap-2 pb-2">
+            <ChartContainer config={projectChartConfig} className="w-full h-[200px] max-w-[240px] !aspect-square">
+              <PieChart margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
                 <ChartTooltip
                   content={<ChartTooltipContent />}
                 />
@@ -314,8 +314,9 @@ export default function MainDashboardPage() {
                   data={dashboard?.projectData || []}
                   dataKey="count"
                   nameKey="status"
-                  innerRadius={60}
-                  strokeWidth={5}
+                  innerRadius={45}
+                  outerRadius={70}
+                  strokeWidth={2}
                 >
                   {(dashboard?.projectData || []).map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -323,14 +324,14 @@ export default function MainDashboardPage() {
                 </Pie>
               </PieChart>
             </ChartContainer>
-            <div className="flex gap-6 items-center justify-center">
+            <div className="flex gap-3 items-center justify-center flex-wrap px-2 pt-1">
               {(dashboard?.projectData || []).map((item, index) => (
-                <div key={item.status} className="flex gap-2 items-center">
+                <div key={item.status} className="flex gap-1.5 items-center">
                   <div
-                    className="w-2 h-2 rounded-full"
+                    className="w-2 h-2 rounded-full shrink-0"
                     style={{ backgroundColor: COLORS[index % COLORS.length] }}
                   />
-                  <span className="text-sm font-medium text-foreground">
+                  <span className="text-xs font-medium text-foreground whitespace-nowrap">
                     {item.status}
                   </span>
                 </div>

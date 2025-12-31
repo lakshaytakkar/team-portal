@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, createContext, useContext, ReactNode } from "react"
+import { useState, useEffect, createContext, useContext, ReactNode, useMemo } from "react"
 import { useUser } from "./useUser"
 
 const DEPARTMENT_STORAGE_KEY = "selected-department"
@@ -62,9 +62,13 @@ export function DepartmentProvider({ children }: { children: ReactNode }) {
   }
 
   // For non-superadmin, provide a dummy context that doesn't affect state
-  const contextValue = user?.role === 'superadmin'
-    ? { selectedDepartments, setSelectedDepartments, toggleDepartment }
-    : { selectedDepartments: [], setSelectedDepartments: () => {}, toggleDepartment: () => {} }
+  // Memoize context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => {
+    if (user?.role === 'superadmin') {
+      return { selectedDepartments, setSelectedDepartments, toggleDepartment }
+    }
+    return { selectedDepartments: [], setSelectedDepartments: () => {}, toggleDepartment: () => {} }
+  }, [user?.role, selectedDepartments])
 
   return (
     <DepartmentContext.Provider value={contextValue}>

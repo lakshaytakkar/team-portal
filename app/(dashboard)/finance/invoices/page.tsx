@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -27,7 +27,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Invoice } from "@/lib/types/finance"
-import { initialInvoices } from "@/lib/data/finance"
+import { getInvoices, deleteInvoice } from "@/lib/actions/finance"
 import { EmptyState } from "@/components/ui/empty-state"
 import { ErrorState } from "@/components/ui/error-state"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -35,8 +35,7 @@ import { RowActionsMenu } from "@/components/actions/RowActionsMenu"
 import { CreateInvoiceDialog } from "@/components/finance/CreateInvoiceDialog"
 
 async function fetchInvoices() {
-  await new Promise((resolve) => setTimeout(resolve, 500))
-  return initialInvoices
+  return await getInvoices()
 }
 
 const statusConfig: Record<
@@ -112,12 +111,20 @@ function StatCard({
 }
 
 export default function FinanceInvoicesPage() {
+  const queryClient = useQueryClient()
   const [searchQuery, setSearchQuery] = useState("")
   const [isCreateInvoiceOpen, setIsCreateInvoiceOpen] = useState(false)
   const { data: invoices, isLoading, error, refetch } = useQuery({
     queryKey: ["invoices"],
     queryFn: fetchInvoices,
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
   })
+
+  const handleDeleteInvoice = async (invoiceId: string) => {
+    await deleteInvoice(invoiceId)
+    await queryClient.invalidateQueries({ queryKey: ["invoices"] })
+  }
 
   if (isLoading) {
     return (
@@ -313,9 +320,11 @@ export default function FinanceInvoicesPage() {
                           entityType="invoice"
                           entityId={invoice.id}
                           entityName={invoice.invoiceNumber}
+                          detailUrl={`/finance/invoices/${invoice.id}`}
                           canView={true}
                           canEdit={true}
-                          canDelete={false}
+                          canDelete={true}
+                          onDelete={() => handleDeleteInvoice(invoice.id)}
                         />
                       </TableCell>
                     </TableRow>

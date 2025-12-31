@@ -130,3 +130,4 @@ CREATE TRIGGER update_positions_updated_at
   EXECUTE FUNCTION update_updated_at();
 
 
+

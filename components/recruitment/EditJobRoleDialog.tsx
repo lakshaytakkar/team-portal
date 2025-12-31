@@ -44,7 +44,7 @@ export function EditJobRoleDialog({ open, onOpenChange, jobRole }: EditJobRoleDi
   // Fetch departments
   const { data: departments = [] } = useQuery({
     queryKey: ["departments"],
-    queryFn: getDepartments,
+    queryFn: () => getDepartments(),
     enabled: open,
   })
 

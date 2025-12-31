@@ -31,13 +31,14 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Employee } from "@/lib/types/hr"
-import { getEmployees } from "@/lib/actions/hr"
+import { getEmployees, deleteEmployee } from "@/lib/actions/hr"
 import { EmptyState } from "@/components/ui/empty-state"
 import { ErrorState } from "@/components/ui/error-state"
 import { Skeleton } from "@/components/ui/skeleton"
 import { RowActionsMenu } from "@/components/actions/RowActionsMenu"
 import { CreateEmployeeDialog } from "@/components/hr/CreateEmployeeDialog"
 import { getAvatarForUser } from "@/lib/utils/avatars"
+import { useQueryClient } from "@tanstack/react-query"
 
 async function fetchEmployees() {
   return await getEmployees()
@@ -165,6 +166,7 @@ function EmployeeCard({ employee }: { employee: Employee }) {
 }
 
 export default function HREmployeesPage() {
+  const queryClient = useQueryClient()
   const [searchQuery, setSearchQuery] = useState("")
   const [isCreateEmployeeOpen, setIsCreateEmployeeOpen] = useState(false)
   const [viewMode, setViewMode] = useState<"table" | "cards">("table")
@@ -172,6 +174,11 @@ export default function HREmployeesPage() {
     queryKey: ["employees"],
     queryFn: fetchEmployees,
   })
+
+  const handleDeleteEmployee = async (employeeId: string) => {
+    await deleteEmployee(employeeId)
+    await queryClient.invalidateQueries({ queryKey: ["employees"] })
+  }
 
   if (isLoading) {
     return (
@@ -384,7 +391,8 @@ export default function HREmployeesPage() {
                             detailUrl={`/hr/employees/${employee.id}`}
                             canView={true}
                             canEdit={true}
-                            canDelete={false}
+                            canDelete={true}
+                            onDelete={() => handleDeleteEmployee(employee.id)}
                           />
                         </TableCell>
                       </TableRow>

@@ -178,16 +178,16 @@ export default function RecruitmentJobRolesPage() {
           </div>
         </div>
       </div>
+
       <div className="flex items-center justify-end gap-3">
-          <Button variant="outline" size="sm" className="gap-2 h-10">
-            <FileDown className="h-4 w-4" />
-            Export
-          </Button>
-          <Button variant="primary" size="sm" className="gap-2 h-10">
-            <Plus className="h-4 w-4" />
-            New Job Role
-          </Button>
-        </div>
+        <Button variant="outline" size="sm" className="gap-2 h-10">
+          <FileDown className="h-4 w-4" />
+          Export
+        </Button>
+        <Button variant="primary" size="sm" className="gap-2 h-10">
+          <Plus className="h-4 w-4" />
+          New Job Role
+        </Button>
       </div>
 
       {/* Filter Bar */}

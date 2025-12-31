@@ -246,28 +246,29 @@ function TaskRow({ task, level, expandedRows, onToggleExpand, onEdit, onStatusUp
           )}
         </TableCell>
         <TableCell>
-          <Select
-            value={task.status}
-            onValueChange={(value: TaskStatus) => {
-              if (onStatusUpdate) {
-                onStatusUpdate(task.id, value)
-              }
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <SelectTrigger className="w-[140px] h-7 border-0 p-0 bg-transparent hover:bg-muted/50">
-              <Badge variant={status.variant} size="sm" className="cursor-pointer">
-                {status.label}
-              </Badge>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="not-started">Not Started</SelectItem>
-              <SelectItem value="in-progress">In Progress</SelectItem>
-              <SelectItem value="in-review">In Review</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="blocked">Blocked</SelectItem>
-            </SelectContent>
-          </Select>
+          <div onClick={(e) => e.stopPropagation()}>
+            <Select
+              value={task.status}
+              onValueChange={(value: TaskStatus) => {
+                if (onStatusUpdate) {
+                  onStatusUpdate(task.id, value)
+                }
+              }}
+            >
+              <SelectTrigger className="w-[140px] h-7 border-0 p-0 bg-transparent hover:bg-muted/50">
+                <Badge variant={status.variant} size="sm" className="cursor-pointer">
+                  {status.label}
+                </Badge>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="not-started">Not Started</SelectItem>
+                <SelectItem value="in-progress">In Progress</SelectItem>
+                <SelectItem value="in-review">In Review</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="blocked">Blocked</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </TableCell>
         <TableCell>
           <Badge variant={priority.variant} size="sm">
@@ -315,7 +316,7 @@ function TaskRow({ task, level, expandedRows, onToggleExpand, onEdit, onStatusUp
               entityName={task.name}
               detailUrl={`/tasks/${task.id}`}
               onEdit={onEdit ? () => onEdit(task) : undefined}
-              onDelete={onDelete ? () => onDelete(task.id) : undefined}
+              onDelete={onDelete ? async () => { await onDelete(task.id) } : undefined}
               canView={true}
               canEdit={true}
               canDelete={true}
@@ -887,7 +888,7 @@ export default function AdminTasksPage() {
               filename="tasks-export"
               userRole={user?.role || "superadmin"}
               page="/admin/tasks"
-              variant="secondary"
+              variant="outline"
               size="sm"
             />
             <Button onClick={() => setIsCreateTaskOpen(true)} variant="secondary" size="sm">
@@ -906,16 +907,17 @@ export default function AdminTasksPage() {
             onRefresh={() => queryClient.invalidateQueries({ queryKey: ["task-analytics"] })}
             className="h-[400px]"
           >
-            <div className="flex flex-col items-center justify-center h-full gap-6">
-              <ChartContainer config={taskStatusChartConfig} className="w-full max-w-[232px] aspect-square">
-                <PieChart>
+            <div className="flex flex-col items-center justify-center h-full gap-2 pb-2">
+              <ChartContainer config={taskStatusChartConfig} className="w-full h-[200px] max-w-[240px] !aspect-square">
+                <PieChart margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <Pie
                     data={statusChartData}
                     dataKey="count"
                     nameKey="status"
-                    innerRadius={60}
-                    strokeWidth={5}
+                    innerRadius={45}
+                    outerRadius={70}
+                    strokeWidth={2}
                   >
                     <Label
                       content={({ viewBox }) => {
@@ -952,14 +954,14 @@ export default function AdminTasksPage() {
                   </Pie>
                 </PieChart>
               </ChartContainer>
-              <div className="flex gap-6 items-center justify-center flex-wrap">
+              <div className="flex gap-3 items-center justify-center flex-wrap px-2 pt-1">
                 {statusChartData.map((item, index) => (
-                  <div key={item.status} className="flex gap-2 items-center">
+                  <div key={item.status} className="flex gap-1.5 items-center">
                     <div
-                      className="w-2 h-2 rounded-full"
+                      className="w-2 h-2 rounded-full shrink-0"
                       style={{ backgroundColor: TASK_STATUS_COLORS[index % TASK_STATUS_COLORS.length] }}
                     />
-                    <span className="text-sm font-medium text-foreground">
+                    <span className="text-xs font-medium text-foreground whitespace-nowrap">
                       {item.status} ({item.count})
                     </span>
                   </div>

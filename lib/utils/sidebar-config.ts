@@ -10,6 +10,7 @@ import {
   Briefcase,
   Calendar,
   Clock,
+  Bell,
   CheckSquare,
   Folder,
   CalendarDays,
@@ -67,6 +68,10 @@ import {
   Droplets,
   UserCog,
   Brain,
+  Scale,
+  Landmark,
+  FileSignature,
+  CreditCard,
 } from "lucide-react"
 
 /**
@@ -89,24 +94,8 @@ export function buildSidebarConfig(
 
   const items: MenuItem[] = []
 
-  // Dashboard - always visible at top for superadmin
-  if (user.isSuperadmin) {
-    items.push({
-      label: "Dashboard",
-      href: "/ceo/dashboard",
-      icon: LayoutDashboard,
-      section: "dashboard",
-      description: "View your overview and quick stats",
-    })
-    items.push({
-      label: "Explore",
-      href: "/explore",
-      icon: Grid3x3,
-      section: "dashboard",
-      description: "Browse all pages and functions",
-    })
-  } else {
-    // Dashboard for non-superadmin
+  // Dashboard - always visible at top for non-superadmin
+  if (!user.isSuperadmin) {
     items.push({
       label: "Dashboard",
       href: "/my-tasks",
@@ -127,14 +116,22 @@ export function buildSidebarConfig(
       subSection: "work",
       description: "Manage and track your projects",
     },
-    {
-      label: "My Tasks",
-      href: "/my-tasks",
-      icon: CheckSquare,
-      section: "my-workspace",
-      subSection: "work",
-      description: "View and update your assigned tasks",
-    },
+      {
+        label: "My Tasks",
+        href: "/my-tasks",
+        icon: CheckSquare,
+        section: "my-workspace",
+        subSection: "work",
+        description: "View and update your assigned tasks",
+      },
+      {
+        label: "My Reminders",
+        href: "/my-reminders",
+        icon: Bell,
+        section: "my-workspace",
+        subSection: "work",
+        description: "View and manage your reminders",
+      },
     {
       label: "My Calls",
       href: "/my-calls",
@@ -210,14 +207,6 @@ export function buildSidebarConfig(
       description: "View and manage your goals and OKRs",
     },
     {
-      label: "My Performance Reviews",
-      href: "/my-performance-reviews",
-      icon: Award,
-      section: "my-workspace",
-      subSection: "personal",
-      description: "View your performance reviews and feedback",
-    },
-    {
       label: "My Notes",
       href: "/my-notes",
       icon: StickyNote,
@@ -255,7 +244,7 @@ export function buildSidebarConfig(
     // GENERAL - Core navigation
     items.push(
       {
-        label: "Dashboard",
+        label: "Main Dashboard",
         href: "/ceo/dashboard",
         icon: LayoutDashboard,
         section: "general",
@@ -275,35 +264,35 @@ export function buildSidebarConfig(
     // DASHBOARDS - Department summaries
     items.push(
       {
-        label: "Finance",
+        label: "Finance Dashboard",
         href: "/finance/dashboard",
         icon: DollarSign,
         section: "dashboards",
         description: "Financial overview and metrics",
       },
       {
-        label: "Sales",
+        label: "Sales Dashboard",
         href: "/sales/dashboard",
         icon: TrendingUp,
         section: "dashboards",
         description: "Sales performance and pipeline",
       },
       {
-        label: "Marketing",
+        label: "Marketing Dashboard",
         href: "/marketing/dashboard",
         icon: Megaphone,
         section: "dashboards",
         description: "Marketing campaigns and performance",
       },
       {
-        label: "HR",
+        label: "HR Dashboard",
         href: "/hr/dashboard",
         icon: Users,
         section: "dashboards",
         description: "HR metrics and workforce insights",
       },
       {
-        label: "Recruitment",
+        label: "Recruitment Dashboard",
         href: "/recruitment/dashboard",
         icon: UserPlus,
         section: "dashboards",
@@ -311,14 +300,14 @@ export function buildSidebarConfig(
         alwaysVisible: true, // Always visible regardless of org/vertical filters
       },
       {
-        label: "Analytics",
+        label: "Analytics Dashboard",
         href: "/analytics/dashboard",
         icon: BarChart3,
         section: "dashboards",
         description: "Analytics dashboard and insights",
       },
       {
-        label: "Operations",
+        label: "Operations Dashboard",
         href: "/ceo/operations-summary",
         icon: Activity,
         section: "dashboards",
@@ -328,28 +317,6 @@ export function buildSidebarConfig(
 
     // CEO - Executive summaries and explorers
     items.push(
-      {
-        label: "Sales Summary",
-        href: "/ceo/sales-summary",
-        icon: DollarSign,
-        section: "dashboards",
-        description: "Sales performance summary",
-      },
-      {
-        label: "HR Summary",
-        href: "/ceo/hr-summary",
-        icon: Users,
-        section: "dashboards",
-        description: "HR metrics summary",
-      },
-      {
-        label: "Recruitment Summary",
-        href: "/ceo/recruitment-summary",
-        icon: UserPlus,
-        section: "dashboards",
-        description: "Recruitment pipeline summary",
-        alwaysVisible: true, // Always visible regardless of org/vertical filters
-      },
       {
         label: "Performance Analytics",
         href: "/ceo/performance-analytics",
@@ -790,6 +757,13 @@ export function buildSidebarConfig(
         description: "View and manage tasks",
       },
       {
+        label: "Daily Reporting",
+        href: "/daily-reporting",
+        icon: FileCheck,
+        section: "operations",
+        description: "View and manage all employee daily reports",
+      },
+      {
         label: "Calls",
         href: "/ceo/explorers/calls",
         icon: Phone,
@@ -871,6 +845,48 @@ export function buildSidebarConfig(
         description: "View all tasks",
       },
       {
+        label: "Reminders",
+        href: "/admin/reminders",
+        icon: Bell,
+        section: "admin",
+        description: "Manage reminders for users",
+      },
+      {
+        label: "Training",
+        href: "/admin/training",
+        icon: GraduationCap,
+        section: "admin",
+        description: "Manage training courses and playlists",
+      },
+      {
+        label: "Attendance",
+        href: "/admin/attendance",
+        icon: Clock,
+        section: "admin",
+        description: "View and manage employee attendance",
+      },
+      {
+        label: "Meeting Notes",
+        href: "/admin/meeting-notes",
+        icon: NotebookPen,
+        section: "admin",
+        description: "View and manage employee meeting notes",
+      },
+      {
+        label: "Documents",
+        href: "/admin/documents",
+        icon: Folder,
+        section: "admin",
+        description: "View and manage employee documents",
+      },
+      {
+        label: "Calls",
+        href: "/admin/calls",
+        icon: Phone,
+        section: "admin",
+        description: "View and manage all calls",
+      },
+      {
         label: "Analytics",
         href: "/admin/analytics",
         icon: BarChart3,
@@ -884,6 +900,52 @@ export function buildSidebarConfig(
         section: "admin",
         description: "System settings",
         alwaysVisible: true, // Always visible regardless of org/vertical filters
+      }
+    )
+
+    // LEGAL NATIONS - LLC Formation Services
+    items.push(
+      {
+        label: "Legal Nations Dashboard",
+        href: "/legal-nations/dashboard",
+        icon: Scale,
+        section: "legal-nations",
+        description: "LLC formation service overview",
+      },
+      {
+        label: "All Clients",
+        href: "/legal-nations/clients",
+        icon: Users,
+        section: "legal-nations",
+        description: "View all LLC clients",
+      },
+      {
+        label: "Applications Pipeline",
+        href: "/legal-nations/applications",
+        icon: FileSignature,
+        section: "legal-nations",
+        description: "Track LLC formation stages",
+      },
+      {
+        label: "Bank Approvals",
+        href: "/legal-nations/bank-approvals",
+        icon: Landmark,
+        section: "legal-nations",
+        description: "Track US bank account applications",
+      }
+    )
+  }
+
+  // LEGAL NATIONS - For non-superadmin users (their assigned clients)
+  if (!user.isSuperadmin) {
+    items.push(
+      {
+        label: "My LLC Clients",
+        href: "/legal-nations/my-clients",
+        icon: Scale,
+        section: "my-workspace",
+        subSection: "work",
+        description: "Manage your assigned LLC clients",
       }
     )
   }
@@ -980,6 +1042,7 @@ export function getSectionLabel(section: string): string {
     operations: "Operations",
     research: "Research",
     development: "Development",
+    "legal-nations": "Legal Nations",
     admin: "Admin",
     team: "Resources",
   }
@@ -1004,6 +1067,7 @@ export function getSectionOrder(): string[] {
     "operations",
     "research",
     "development",
+    "legal-nations",
     "admin",
     "team",
   ]

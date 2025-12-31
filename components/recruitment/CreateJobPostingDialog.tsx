@@ -50,7 +50,7 @@ export function CreateJobPostingDialog({ open, onOpenChange }: CreateJobPostingD
   // Fetch departments for Category dropdown
   const { data: departments = [] } = useQuery({
     queryKey: ["departments"],
-    queryFn: getDepartments,
+    queryFn: () => getDepartments(),
     enabled: open,
   })
 

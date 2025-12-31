@@ -28,6 +28,8 @@ import {
 import { cn } from "@/lib/utils"
 import { Expense } from "@/lib/types/finance"
 import { initialExpenses } from "@/lib/data/finance"
+import { deleteExpense } from "@/lib/actions/finance"
+import { useQueryClient } from "@tanstack/react-query"
 import { EmptyState } from "@/components/ui/empty-state"
 import { ErrorState } from "@/components/ui/error-state"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -115,12 +117,18 @@ function StatCard({
 }
 
 export default function FinanceExpensesPage() {
+  const queryClient = useQueryClient()
   const [searchQuery, setSearchQuery] = useState("")
   const [isCreateExpenseOpen, setIsCreateExpenseOpen] = useState(false)
   const { data: expenses, isLoading, error, refetch } = useQuery({
     queryKey: ["expenses"],
     queryFn: fetchExpenses,
   })
+
+  const handleDeleteExpense = async (expenseId: string) => {
+    await deleteExpense(expenseId)
+    await queryClient.invalidateQueries({ queryKey: ["expenses"] })
+  }
 
   if (isLoading) {
     return (
@@ -313,9 +321,11 @@ export default function FinanceExpensesPage() {
                           entityType="expense"
                           entityId={expense.id}
                           entityName={expense.description}
+                          detailUrl={`/finance/expenses/${expense.id}`}
                           canView={true}
                           canEdit={true}
-                          canDelete={false}
+                          canDelete={true}
+                          onDelete={() => handleDeleteExpense(expense.id)}
                         />
                       </TableCell>
                     </TableRow>

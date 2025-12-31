@@ -36,6 +36,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { RowActionsMenu } from "@/components/actions/RowActionsMenu"
 import { CreateDealDialog } from "@/components/sales/CreateDealDialog"
 import { getAvatarForUser } from "@/lib/utils/avatars"
+import { deleteDeal } from "@/lib/actions/sales"
+import { useQueryClient } from "@tanstack/react-query"
 
 async function fetchDeals() {
   await new Promise((resolve) => setTimeout(resolve, 500))
@@ -52,6 +54,7 @@ const stageConfig: Record<string, { label: string; variant: "default" | "seconda
 }
 
 export default function SalesDealsPage() {
+  const queryClient = useQueryClient()
   const [searchQuery, setSearchQuery] = useState("")
   const [isCreateDealOpen, setIsCreateDealOpen] = useState(false)
   const searchParams = useSearchParams()
@@ -61,6 +64,11 @@ export default function SalesDealsPage() {
     queryKey: ["deals"],
     queryFn: fetchDeals,
   })
+
+  const handleDeleteDeal = async (dealId: string) => {
+    await deleteDeal(dealId)
+    await queryClient.invalidateQueries({ queryKey: ["deals"] })
+  }
 
   if (isLoading) {
     return (
@@ -271,7 +279,8 @@ export default function SalesDealsPage() {
                           detailUrl={`/sales/deals/${deal.id}`}
                           canView={true}
                           canEdit={true}
-                          canDelete={false}
+                          canDelete={true}
+                          onDelete={() => handleDeleteDeal(deal.id)}
                         />
                       </TableCell>
                     </TableRow>

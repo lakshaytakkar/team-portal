@@ -37,7 +37,7 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { toast } from "@/components/ui/sonner"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { getTasks, updateTaskStatus, getAssignableUsers, getProjectsForTasks, type TaskFilters, type TaskSort } from "@/lib/actions/tasks"
+import { getTasks, updateTaskStatus, deleteTask, getAssignableUsers, getProjectsForTasks, type TaskFilters, type TaskSort } from "@/lib/actions/tasks"
 import { useUserContext } from "@/lib/providers/UserContextProvider"
 import { KanbanBoard, KanbanColumn } from "@/components/kanban/KanbanBoard"
 import { TaskKanbanCard } from "@/components/tasks/TaskKanbanCard"
@@ -223,30 +223,31 @@ function TaskRow({ task, level, expandedRows, onToggleExpand, onEdit, onStatusUp
         
         {/* Status - 140px */}
         <TableCell className="w-[140px] px-4">
-          <Select
-            value={task.status}
-            onValueChange={(value: TaskStatus) => {
-              if (onStatusUpdate) {
-                onStatusUpdate(task.id, value)
-              }
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <SelectTrigger className="w-full h-auto border-0 p-0 bg-transparent hover:bg-transparent">
-              <div className={cn("rounded-full px-2 py-1 w-fit", status.bgColor)}>
-                <p className={cn("font-medium text-sm leading-[1.3] text-center", status.textColor)}>
-                  {status.label}
-                </p>
-              </div>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="not-started">To Do</SelectItem>
-              <SelectItem value="in-progress">In Progress</SelectItem>
-              <SelectItem value="in-review">In Review</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="blocked">Blocked</SelectItem>
-            </SelectContent>
-          </Select>
+          <div onClick={(e) => e.stopPropagation()}>
+            <Select
+              value={task.status}
+              onValueChange={(value: TaskStatus) => {
+                if (onStatusUpdate) {
+                  onStatusUpdate(task.id, value)
+                }
+              }}
+            >
+              <SelectTrigger className="w-full h-auto border-0 p-0 bg-transparent hover:bg-transparent">
+                <div className={cn("rounded-full px-2 py-1 w-fit", status.bgColor)}>
+                  <p className={cn("font-medium text-sm leading-[1.3] text-center", status.textColor)}>
+                    {status.label}
+                  </p>
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="not-started">To Do</SelectItem>
+                <SelectItem value="in-progress">In Progress</SelectItem>
+                <SelectItem value="in-review">In Review</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="blocked">Blocked</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </TableCell>
         
         {/* Due Date - 170px */}
@@ -271,9 +272,10 @@ function TaskRow({ task, level, expandedRows, onToggleExpand, onEdit, onStatusUp
               entityName={task.name}
               detailUrl={`/tasks/${task.id}`}
               onEdit={onEdit ? () => onEdit(task) : undefined}
+              onDelete={() => handleDeleteTask(task.id)}
               canView={true}
               canEdit={true}
-              canDelete={false}
+              canDelete={true}
             />
           </div>
         </TableCell>
@@ -527,6 +529,12 @@ export default function TasksPage() {
   const handleEditTask = (task: Task) => {
     setEditingTask(task)
     setIsEditTaskOpen(true)
+  }
+
+  const handleDeleteTask = async (taskId: string) => {
+    await deleteTask(taskId)
+    await queryClient.invalidateQueries({ queryKey: ["admin-tasks"] })
+    await queryClient.invalidateQueries({ queryKey: ["my-tasks"] })
   }
   
   const handleStatusUpdate = (taskId: string, status: TaskStatus) => {

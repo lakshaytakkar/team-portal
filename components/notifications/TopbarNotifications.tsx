@@ -18,11 +18,18 @@ export function TopbarNotifications() {
   const router = useRouter()
   const queryClient = useQueryClient()
   const [open, setOpen] = React.useState(false)
+  const [mounted, setMounted] = React.useState(false)
+
+  // Only render after client-side hydration to avoid hydration mismatches
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Fetch unread count - minimal polling, rely on manual refresh
   const { data: unreadCount = 0, refetch: refetchUnreadCount } = useQuery({
     queryKey: ["notifications", "unread-count"],
     queryFn: getUnreadNotificationsCount,
+    enabled: mounted, // Only fetch after mount
     refetchInterval: 120000, // Poll every 2 minutes (reduced from 60s)
     staleTime: 60000, // Consider data fresh for 60 seconds
   })
@@ -31,7 +38,7 @@ export function TopbarNotifications() {
   const { data: notifications = [], refetch: refetchNotifications, isFetching } = useQuery({
     queryKey: ["notifications", "list"],
     queryFn: () => getNotifications({ limit: 20 }),
-    enabled: open, // Only fetch when popover is open
+    enabled: mounted && open, // Only fetch after mount and when popover is open
     refetchInterval: false, // Disable automatic polling - use manual refresh instead
     staleTime: 60000, // Consider data fresh for 60 seconds
   })
@@ -128,6 +135,18 @@ export function TopbarNotifications() {
 
   const unreadNotifications = notifications.filter((n) => !n.read)
   const readNotifications = notifications.filter((n) => n.read)
+
+  // Show placeholder before hydration
+  if (!mounted) {
+    return (
+      <button
+        className="relative flex items-center justify-center h-9 w-9 rounded-lg border border-border bg-background"
+        disabled
+      >
+        <Bell className="h-4.5 w-4.5 text-muted-foreground" />
+      </button>
+    )
+  }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

@@ -29,7 +29,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Candidate, CandidateStatus } from "@/lib/types/candidate"
-import { getCandidates, updateCandidateStatus, getCandidateTimeline, getRecruitmentMetrics } from "@/lib/actions/recruitment"
+import { getCandidates, updateCandidateStatus, getCandidateTimeline, getRecruitmentMetrics, deleteCandidate } from "@/lib/actions/recruitment"
 import { EmptyState } from "@/components/ui/empty-state"
 import { ErrorState } from "@/components/ui/error-state"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -220,6 +220,11 @@ export default function CandidatesPage() {
     toast.info("Bulk delete confirmation coming soon")
   }
 
+  const handleDeleteCandidate = async (candidateId: string) => {
+    await deleteCandidate(candidateId)
+    await queryClient.invalidateQueries({ queryKey: ["candidates"] })
+  }
+
   // Filter by view mode (my vs team) - for now, show all, but this would filter by assignedTo in real app
   // NOTE: useMemo must be called before any early returns to maintain consistent hook order
   const filteredCandidates = useMemo(() => {
@@ -405,7 +410,6 @@ export default function CandidatesPage() {
             </p>
           </div>
         </div>
-      </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -639,7 +643,8 @@ export default function CandidatesPage() {
                             candidate={candidate}
                             canView={true}
                             canEdit={true}
-                            canDelete={false}
+                            canDelete={true}
+                            onDelete={() => handleDeleteCandidate(candidate.id)}
                             showBulkSelect={false}
                             onScheduleInterview={() => {
                               router.push(`/recruitment/interviews?candidate=${candidate.id}`)

@@ -37,6 +37,8 @@ ALTER TABLE notifications ADD CONSTRAINT notifications_type_check CHECK (type IN
   -- Asset notifications
   'asset_assigned',
   'asset_returned',
-  'asset_maintenance'
+  'asset_maintenance',
+  -- Reminder notifications
+  'reminder'
 ));
 

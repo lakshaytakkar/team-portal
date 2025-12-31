@@ -100,7 +100,8 @@ function canEditLeaveRequest(userId: string, leaveRequest: LeaveRequest): boolea
 export async function getLeaveRequests(
   userId?: string,
   view: 'my' | 'all' = 'my',
-  filter: 'active' | 'past' | 'pending' | 'all' = 'all'
+  filter: 'active' | 'past' | 'pending' | 'all' = 'all',
+  departmentId?: string
 ): Promise<LeaveRequest[]> {
   const supabase = await createClient()
 
@@ -110,21 +111,7 @@ export async function getLeaveRequests(
 
     let query = supabase
       .from('leave_requests')
-      .select(`
-        *,
-        user:profiles!leave_requests_user_id_fkey(
-          id,
-          full_name,
-          email,
-          avatar_url
-        ),
-        approved_by:profiles!leave_requests_approved_by_id_fkey(
-          id,
-          full_name,
-          email,
-          avatar_url
-        )
-      `)
+      .select('*')
       .order('created_at', { ascending: false })
 
     // Apply view filter
@@ -144,30 +131,60 @@ export async function getLeaveRequests(
       throw new Error(error.message)
     }
 
-    if (!data) return []
+    if (!data || data.length === 0) return []
+
+    // Fetch related profiles separately
+    const userIds = new Set<string>()
+    data.forEach((row: any) => {
+      if (row.user_id) userIds.add(row.user_id)
+      if (row.approved_by_id) userIds.add(row.approved_by_id)
+    })
+
+    const { data: profiles, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id, full_name, email, avatar_url, department_id')
+      .in('id', Array.from(userIds))
+
+    if (profilesError) {
+      logDatabaseError(profilesError, 'getLeaveRequests - fetch profiles')
+    }
+
+    // Create a map for quick lookup
+    const profilesMap = new Map((profiles || []).map((p: any) => [p.id, p]))
+
+    // Map profiles to leave requests
+    const dataWithProfiles = data.map((row: any) => ({
+      ...row,
+      user: profilesMap.get(row.user_id) || null,
+      approved_by: row.approved_by_id ? (profilesMap.get(row.approved_by_id) || null) : null,
+    }))
+
+    // Apply department filter in memory if provided (for nested relation data)
+    let filteredData = dataWithProfiles
+    if (departmentId && view === 'all') {
+      filteredData = filteredData.filter((row: any) => row.user?.department_id === departmentId)
+    }
 
     // Apply filters in memory for complex conditions
     if (filter === 'active') {
       // Active: (pending OR approved) AND end_date >= today
-      data = data.filter((row: any) => {
+      filteredData = filteredData.filter((row: any) => {
         const isPendingOrApproved = row.status === 'pending' || row.status === 'approved'
         const endDate = row.end_date
         return isPendingOrApproved && endDate >= today
       })
     } else if (filter === 'past') {
       // Past: end_date < today OR cancelled OR rejected
-      data = data.filter((row: any) => {
+      filteredData = filteredData.filter((row: any) => {
         const endDate = row.end_date
         const status = row.status
         return endDate < today || status === 'cancelled' || status === 'rejected'
       })
     } else if (filter === 'pending') {
-      data = data.filter((row: any) => row.status === 'pending')
+      filteredData = filteredData.filter((row: any) => row.status === 'pending')
     }
 
-    if (!data) return []
-
-    return data.map((row: any) => ({
+    return filteredData.map((row: any) => ({
       id: row.id,
       userId: row.user_id,
       type: row.type,
@@ -203,21 +220,7 @@ export async function getLeaveRequestById(id: string): Promise<LeaveRequest | nu
   try {
     const { data, error } = await supabase
       .from('leave_requests')
-      .select(`
-        *,
-        user:profiles!leave_requests_user_id_fkey(
-          id,
-          full_name,
-          email,
-          avatar_url
-        ),
-        approved_by:profiles!leave_requests_approved_by_id_fkey(
-          id,
-          full_name,
-          email,
-          avatar_url
-        )
-      `)
+      .select('*')
       .eq('id', id)
       .single()
 
@@ -227,6 +230,18 @@ export async function getLeaveRequestById(id: string): Promise<LeaveRequest | nu
     }
 
     if (!data) return null
+
+    // Fetch related profiles separately
+    const userIds: string[] = []
+    if (data.user_id) userIds.push(data.user_id)
+    if (data.approved_by_id) userIds.push(data.approved_by_id)
+
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, full_name, email, avatar_url')
+      .in('id', userIds)
+
+    const profilesMap = new Map((profiles || []).map((p: any) => [p.id, p]))
 
     return {
       id: data.id,
@@ -245,8 +260,8 @@ export async function getLeaveRequestById(id: string): Promise<LeaveRequest | nu
       updatedAt: data.updated_at,
       createdBy: data.created_by || undefined,
       updatedBy: data.updated_by || undefined,
-      user: toLeaveRequestUser(data.user),
-      approvedBy: toLeaveRequestUser(data.approved_by),
+      user: toLeaveRequestUser(profilesMap.get(data.user_id) || null),
+      approvedBy: toLeaveRequestUser(data.approved_by_id ? (profilesMap.get(data.approved_by_id) || null) : null),
     }
   } catch (error) {
     logDatabaseError(error, 'getLeaveRequestById')
@@ -310,27 +325,25 @@ export async function createLeaveRequest(input: CreateLeaveRequestInput): Promis
         created_by: currentUserId,
         updated_by: currentUserId,
       })
-      .select(`
-        *,
-        user:profiles!leave_requests_user_id_fkey(
-          id,
-          full_name,
-          email,
-          avatar_url
-        ),
-        approved_by:profiles!leave_requests_approved_by_id_fkey(
-          id,
-          full_name,
-          email,
-          avatar_url
-        )
-      `)
+      .select('*')
       .single()
 
     if (error) {
       logDatabaseError(error, 'createLeaveRequest')
       throw new Error(error.message)
     }
+
+    // Fetch related profiles separately
+    const userIds: string[] = []
+    if (data.user_id) userIds.push(data.user_id)
+    if (data.approved_by_id) userIds.push(data.approved_by_id)
+
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, full_name, email, avatar_url')
+      .in('id', userIds)
+
+    const profilesMap = new Map((profiles || []).map((p: any) => [p.id, p]))
 
     revalidatePath('/my-leave-requests')
 
@@ -342,16 +355,17 @@ export async function createLeaveRequest(input: CreateLeaveRequestInput): Promis
       .single()
 
     if (userProfile?.manager_id) {
+      const userProfileData = profilesMap.get(data.user_id)
       try {
         await createNotification({
           userId: userProfile.manager_id,
           type: 'leave_request_submitted',
           title: 'Leave Request Submitted',
-          message: `${data.user?.full_name || 'An employee'} has submitted a ${input.type} leave request for ${data.days} day${data.days !== 1 ? 's' : ''}`,
+          message: `${userProfileData?.full_name || 'An employee'} has submitted a ${input.type} leave request for ${data.days} day${data.days !== 1 ? 's' : ''}`,
           data: {
             leave_request_id: data.id,
             user_id: currentUserId,
-            user_name: data.user?.full_name,
+            user_name: userProfileData?.full_name,
             type: input.type,
             start_date: input.startDate,
             end_date: input.endDate,
@@ -381,17 +395,18 @@ export async function createLeaveRequest(input: CreateLeaveRequestInput): Promis
           .neq('id', currentUserId)
 
         if (hrUsers && hrUsers.length > 0) {
+          const userProfileData = profilesMap.get(data.user_id)
           for (const hrUser of hrUsers) {
             try {
               await createNotification({
                 userId: hrUser.id,
                 type: 'leave_request_submitted',
                 title: 'Leave Request Submitted',
-                message: `${data.user?.full_name || 'An employee'} has submitted a ${input.type} leave request`,
+                message: `${userProfileData?.full_name || 'An employee'} has submitted a ${input.type} leave request`,
                 data: {
                   leave_request_id: data.id,
                   user_id: currentUserId,
-                  user_name: data.user?.full_name,
+                  user_name: userProfileData?.full_name,
                   type: input.type,
                   start_date: input.startDate,
                   end_date: input.endDate,
@@ -423,8 +438,8 @@ export async function createLeaveRequest(input: CreateLeaveRequestInput): Promis
       updatedAt: data.updated_at,
       createdBy: data.created_by || undefined,
       updatedBy: data.updated_by || undefined,
-      user: toLeaveRequestUser(data.user),
-      approvedBy: toLeaveRequestUser(data.approved_by),
+      user: toLeaveRequestUser(profilesMap.get(data.user_id) || null),
+      approvedBy: toLeaveRequestUser(data.approved_by_id ? (profilesMap.get(data.approved_by_id) || null) : null),
     }
   } catch (error) {
     logDatabaseError(error, 'createLeaveRequest')
@@ -503,21 +518,7 @@ export async function updateLeaveRequest(id: string, input: UpdateLeaveRequestIn
       .from('leave_requests')
       .update(update)
       .eq('id', id)
-      .select(`
-        *,
-        user:profiles!leave_requests_user_id_fkey(
-          id,
-          full_name,
-          email,
-          avatar_url
-        ),
-        approved_by:profiles!leave_requests_approved_by_id_fkey(
-          id,
-          full_name,
-          email,
-          avatar_url
-        )
-      `)
+      .select('*')
       .single()
 
     if (error) {
@@ -525,7 +526,21 @@ export async function updateLeaveRequest(id: string, input: UpdateLeaveRequestIn
       throw new Error(error.message)
     }
 
+    // Fetch related profiles separately
+    const userIds: string[] = []
+    if (data.user_id) userIds.push(data.user_id)
+    if (data.approved_by_id) userIds.push(data.approved_by_id)
+
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, full_name, email, avatar_url')
+      .in('id', userIds)
+
+    const profilesMap = new Map((profiles || []).map((p: any) => [p.id, p]))
+
     revalidatePath('/my-leave-requests')
+    revalidatePath('/hr/leave-requests')
+    revalidatePath('/leave-requests')
 
     return {
       id: data.id,
@@ -544,8 +559,8 @@ export async function updateLeaveRequest(id: string, input: UpdateLeaveRequestIn
       updatedAt: data.updated_at,
       createdBy: data.created_by || undefined,
       updatedBy: data.updated_by || undefined,
-      user: toLeaveRequestUser(data.user),
-      approvedBy: toLeaveRequestUser(data.approved_by),
+      user: toLeaveRequestUser(profilesMap.get(data.user_id) || null),
+      approvedBy: toLeaveRequestUser(data.approved_by_id ? (profilesMap.get(data.approved_by_id) || null) : null),
     }
   } catch (error) {
     logDatabaseError(error, 'updateLeaveRequest')
@@ -590,21 +605,7 @@ export async function cancelLeaveRequest(id: string): Promise<LeaveRequest> {
         updated_at: new Date().toISOString(),
       })
       .eq('id', id)
-      .select(`
-        *,
-        user:profiles!leave_requests_user_id_fkey(
-          id,
-          full_name,
-          email,
-          avatar_url
-        ),
-        approved_by:profiles!leave_requests_approved_by_id_fkey(
-          id,
-          full_name,
-          email,
-          avatar_url
-        )
-      `)
+      .select('*')
       .single()
 
     if (error) {
@@ -612,7 +613,21 @@ export async function cancelLeaveRequest(id: string): Promise<LeaveRequest> {
       throw new Error(error.message)
     }
 
+    // Fetch related profiles separately
+    const userIds: string[] = []
+    if (data.user_id) userIds.push(data.user_id)
+    if (data.approved_by_id) userIds.push(data.approved_by_id)
+
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, full_name, email, avatar_url')
+      .in('id', userIds)
+
+    const profilesMap = new Map((profiles || []).map((p: any) => [p.id, p]))
+
     revalidatePath('/my-leave-requests')
+    revalidatePath('/hr/leave-requests')
+    revalidatePath('/leave-requests')
 
     return {
       id: data.id,
@@ -631,8 +646,8 @@ export async function cancelLeaveRequest(id: string): Promise<LeaveRequest> {
       updatedAt: data.updated_at,
       createdBy: data.created_by || undefined,
       updatedBy: data.updated_by || undefined,
-      user: toLeaveRequestUser(data.user),
-      approvedBy: toLeaveRequestUser(data.approved_by),
+      user: toLeaveRequestUser(profilesMap.get(data.user_id) || null),
+      approvedBy: toLeaveRequestUser(data.approved_by_id ? (profilesMap.get(data.approved_by_id) || null) : null),
     }
   } catch (error) {
     logDatabaseError(error, 'cancelLeaveRequest')
@@ -687,21 +702,7 @@ export async function approveLeaveRequest(id: string, input: ApproveLeaveRequest
         updated_at: new Date().toISOString(),
       })
       .eq('id', id)
-      .select(`
-        *,
-        user:profiles!leave_requests_user_id_fkey(
-          id,
-          full_name,
-          email,
-          avatar_url
-        ),
-        approved_by:profiles!leave_requests_approved_by_id_fkey(
-          id,
-          full_name,
-          email,
-          avatar_url
-        )
-      `)
+      .select('*')
       .single()
 
     if (error) {
@@ -709,7 +710,21 @@ export async function approveLeaveRequest(id: string, input: ApproveLeaveRequest
       throw new Error(error.message)
     }
 
+    // Fetch related profiles separately
+    const userIds: string[] = []
+    if (data.user_id) userIds.push(data.user_id)
+    if (data.approved_by_id) userIds.push(data.approved_by_id)
+
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, full_name, email, avatar_url')
+      .in('id', userIds)
+
+    const profilesMap = new Map((profiles || []).map((p: any) => [p.id, p]))
+
     revalidatePath('/my-leave-requests')
+    revalidatePath('/hr/leave-requests')
+    revalidatePath('/leave-requests')
 
     // Notify requester when request is approved
     try {
@@ -749,8 +764,8 @@ export async function approveLeaveRequest(id: string, input: ApproveLeaveRequest
       updatedAt: data.updated_at,
       createdBy: data.created_by || undefined,
       updatedBy: data.updated_by || undefined,
-      user: toLeaveRequestUser(data.user),
-      approvedBy: toLeaveRequestUser(data.approved_by),
+      user: toLeaveRequestUser(profilesMap.get(data.user_id) || null),
+      approvedBy: toLeaveRequestUser(data.approved_by_id ? (profilesMap.get(data.approved_by_id) || null) : null),
     }
   } catch (error) {
     logDatabaseError(error, 'approveLeaveRequest')
@@ -801,21 +816,7 @@ export async function rejectLeaveRequest(id: string, input: ApproveLeaveRequestI
         updated_at: new Date().toISOString(),
       })
       .eq('id', id)
-      .select(`
-        *,
-        user:profiles!leave_requests_user_id_fkey(
-          id,
-          full_name,
-          email,
-          avatar_url
-        ),
-        approved_by:profiles!leave_requests_approved_by_id_fkey(
-          id,
-          full_name,
-          email,
-          avatar_url
-        )
-      `)
+      .select('*')
       .single()
 
     if (error) {
@@ -823,7 +824,21 @@ export async function rejectLeaveRequest(id: string, input: ApproveLeaveRequestI
       throw new Error(error.message)
     }
 
+    // Fetch related profiles separately
+    const userIds: string[] = []
+    if (data.user_id) userIds.push(data.user_id)
+    if (data.approved_by_id) userIds.push(data.approved_by_id)
+
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, full_name, email, avatar_url')
+      .in('id', userIds)
+
+    const profilesMap = new Map((profiles || []).map((p: any) => [p.id, p]))
+
     revalidatePath('/my-leave-requests')
+    revalidatePath('/hr/leave-requests')
+    revalidatePath('/leave-requests')
 
     // Notify requester when request is rejected
     try {
@@ -863,11 +878,151 @@ export async function rejectLeaveRequest(id: string, input: ApproveLeaveRequestI
       updatedAt: data.updated_at,
       createdBy: data.created_by || undefined,
       updatedBy: data.updated_by || undefined,
-      user: toLeaveRequestUser(data.user),
-      approvedBy: toLeaveRequestUser(data.approved_by),
+      user: toLeaveRequestUser(profilesMap.get(data.user_id) || null),
+      approvedBy: toLeaveRequestUser(data.approved_by_id ? (profilesMap.get(data.approved_by_id) || null) : null),
     }
   } catch (error) {
     logDatabaseError(error, 'rejectLeaveRequest')
+    const friendlyMessage = getUserFriendlyErrorMessage(error)
+    throw new Error(friendlyMessage)
+  }
+}
+
+/**
+ * Bulk approve leave requests (SuperAdmin only)
+ */
+export async function bulkApproveLeaveRequests(
+  ids: string[],
+  approvalNotes?: string
+): Promise<{ success: number; failed: number; errors: string[] }> {
+  const supabase = await createClient()
+
+  try {
+    const currentUserId = await getCurrentUserId()
+    if (!currentUserId) {
+      throw new Error('User not authenticated')
+    }
+
+    // Check if user is superadmin
+    const { data: currentUser } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', currentUserId)
+      .single()
+
+    if (currentUser?.role !== 'superadmin') {
+      throw new Error('Only superadmins can perform bulk operations')
+    }
+
+    if (!ids || ids.length === 0) {
+      throw new Error('No leave request IDs provided')
+    }
+
+    const approvalNotesNormalized = normalizeOptional(approvalNotes)
+    let success = 0
+    let failed = 0
+    const errors: string[] = []
+
+    for (const id of ids) {
+      try {
+        const existing = await getLeaveRequestById(id)
+        if (!existing) {
+          errors.push(`Leave request ${id} not found`)
+          failed++
+          continue
+        }
+
+        if (existing.status !== 'pending') {
+          errors.push(`Leave request ${id} is not pending`)
+          failed++
+          continue
+        }
+
+        await approveLeaveRequest(id, { approvalNotes: approvalNotesNormalized })
+        success++
+      } catch (error) {
+        failed++
+        errors.push(`${id}: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      }
+    }
+
+    revalidatePath('/my-leave-requests')
+    revalidatePath('/hr/leave-requests')
+    revalidatePath('/leave-requests')
+
+    return { success, failed, errors }
+  } catch (error) {
+    logDatabaseError(error, 'bulkApproveLeaveRequests')
+    const friendlyMessage = getUserFriendlyErrorMessage(error)
+    throw new Error(friendlyMessage)
+  }
+}
+
+/**
+ * Bulk reject leave requests (SuperAdmin only)
+ */
+export async function bulkRejectLeaveRequests(
+  ids: string[],
+  approvalNotes?: string
+): Promise<{ success: number; failed: number; errors: string[] }> {
+  const supabase = await createClient()
+
+  try {
+    const currentUserId = await getCurrentUserId()
+    if (!currentUserId) {
+      throw new Error('User not authenticated')
+    }
+
+    // Check if user is superadmin
+    const { data: currentUser } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', currentUserId)
+      .single()
+
+    if (currentUser?.role !== 'superadmin') {
+      throw new Error('Only superadmins can perform bulk operations')
+    }
+
+    if (!ids || ids.length === 0) {
+      throw new Error('No leave request IDs provided')
+    }
+
+    const approvalNotesNormalized = normalizeOptional(approvalNotes)
+    let success = 0
+    let failed = 0
+    const errors: string[] = []
+
+    for (const id of ids) {
+      try {
+        const existing = await getLeaveRequestById(id)
+        if (!existing) {
+          errors.push(`Leave request ${id} not found`)
+          failed++
+          continue
+        }
+
+        if (existing.status !== 'pending') {
+          errors.push(`Leave request ${id} is not pending`)
+          failed++
+          continue
+        }
+
+        await rejectLeaveRequest(id, { approvalNotes: approvalNotesNormalized })
+        success++
+      } catch (error) {
+        failed++
+        errors.push(`${id}: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      }
+    }
+
+    revalidatePath('/my-leave-requests')
+    revalidatePath('/hr/leave-requests')
+    revalidatePath('/leave-requests')
+
+    return { success, failed, errors }
+  } catch (error) {
+    logDatabaseError(error, 'bulkRejectLeaveRequests')
     const friendlyMessage = getUserFriendlyErrorMessage(error)
     throw new Error(friendlyMessage)
   }

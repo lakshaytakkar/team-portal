@@ -298,7 +298,7 @@ export async function getUsers(): Promise<AdminUser[]> {
       
       // Determine status based on auth user and profile
       let status: UserStatus = 'active'
-      if (authUser.banned_until) {
+      if ((authUser as any).banned_until) {
         status = 'suspended'
       } else if (!profile?.is_active) {
         status = 'inactive'

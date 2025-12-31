@@ -441,7 +441,7 @@ function TaskCard({ task }: { task: Task }) {
                 cy="10"
                 r="8"
                 fill="none"
-                stroke={progress === 100 ? "#40C4AA" : progress >= 60 ? "#897EFA" : "#DFE1E7"}
+                stroke={progress === 100 ? "#40C4AA" : progress >= 60 ? "#1e3a8a" : "#DFE1E7"}
                 strokeWidth="2"
                 strokeDasharray={`${2 * Math.PI * 8}`}
                 strokeDashoffset={`${2 * Math.PI * 8 * (1 - progress / 100)}`}

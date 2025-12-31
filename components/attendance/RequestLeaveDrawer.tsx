@@ -103,7 +103,7 @@ export function RequestLeaveDrawer({ open, onOpenChange }: RequestLeaveDrawerPro
       startDate: "",
       endDate: "",
       reason: "",
-      documents: "",
+      documents: [],
       coveragePlan: "",
       contactDuringLeave: "",
     })

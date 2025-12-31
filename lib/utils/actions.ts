@@ -110,6 +110,12 @@ export function getRowActions(context: RowActionContext): Action[] {
       return getLeaveRequestRowActions(context)
     case 'user':
       return getUserRowActions(context)
+    case 'training':
+      return getTrainingRowActions(context)
+    case 'meeting-note':
+      return getMeetingNoteRowActions(context)
+    case 'personal-document':
+      return getPersonalDocumentRowActions(context)
     default:
       return []
   }
@@ -633,6 +639,12 @@ export function getTopbarActions(context: TopbarActionContext): {
     return getCampaignsTopbarActions(context)
   } else if (page.includes('/hr/employees')) {
     return getEmployeesTopbarActions(context)
+  } else if (page.includes('/my-training') || page.includes('/admin/training')) {
+    return getTrainingTopbarActions(context)
+  } else if (page.includes('/my-meeting-notes') || page.includes('/admin/meeting-notes')) {
+    return getMeetingNotesTopbarActions(context)
+  } else if (page.includes('/my-documents') || page.includes('/admin/documents')) {
+    return getDocumentsTopbarActions(context)
   }
 
   return { primary, secondary }
@@ -1170,5 +1182,138 @@ function getEmployeesTopbarActions(context: TopbarActionContext) {
   }
 
   return { primary, secondary }
+}
+
+function getTrainingRowActions(context: RowActionContext): Action[] {
+  const { entity, userRole, currentUserId } = context
+  const actions: Action[] = []
+
+  // View Detail
+  actions.push({
+    id: 'view',
+    type: 'view',
+    label: 'View Details',
+    onClick: () => {
+      window.location.href = `/my-training/${entity.id}`
+    },
+  })
+
+  // Edit (superadmin only)
+  if (userRole === 'superadmin') {
+    actions.push({
+      id: 'edit',
+      type: 'edit',
+      label: 'Edit',
+      onClick: () => {
+        // Open edit dialog
+      },
+    })
+  }
+
+  // Delete (superadmin only)
+  if (userRole === 'superadmin') {
+    actions.push({
+      id: 'delete',
+      type: 'delete',
+      label: 'Delete',
+      variant: 'destructive',
+      requiresConfirmation: true,
+      confirmationMessage: `Are you sure you want to delete "${entity.title}"?`,
+      onClick: () => {
+        // Handle delete
+      },
+    })
+  }
+
+  return actions
+}
+
+function getMeetingNoteRowActions(context: RowActionContext): Action[] {
+  const { entity, userRole, currentUserId } = context
+  const actions: Action[] = []
+
+  // View Detail
+  actions.push({
+    id: 'view',
+    type: 'view',
+    label: 'View Details',
+    onClick: () => {
+      window.location.href = `/my-meeting-notes/${entity.id}`
+    },
+  })
+
+  // Edit (own notes or superadmin)
+  if (entity.userId === currentUserId || userRole === 'superadmin') {
+    actions.push({
+      id: 'edit',
+      type: 'edit',
+      label: 'Edit',
+      onClick: () => {
+        // Open edit dialog
+      },
+    })
+  }
+
+  // Delete (own notes or superadmin)
+  if (entity.userId === currentUserId || userRole === 'superadmin') {
+    actions.push({
+      id: 'delete',
+      type: 'delete',
+      label: 'Delete',
+      variant: 'destructive',
+      requiresConfirmation: true,
+      confirmationMessage: `Are you sure you want to delete "${entity.title}"?`,
+      onClick: () => {
+        // Handle delete
+      },
+    })
+  }
+
+  return actions
+}
+
+function getPersonalDocumentRowActions(context: RowActionContext): Action[] {
+  const { entity, userRole, currentUserId } = context
+  const actions: Action[] = []
+
+  // Download
+  actions.push({
+    id: 'download',
+    type: 'view',
+    label: 'Download',
+    onClick: () => {
+      // Download file
+      window.open(entity.url, '_blank')
+    },
+  })
+
+  // Edit (own documents or superadmin)
+  if (entity.userId === currentUserId || userRole === 'superadmin') {
+    actions.push({
+      id: 'edit',
+      type: 'edit',
+      label: 'Edit',
+      onClick: () => {
+        // Open edit dialog
+      },
+    })
+  }
+
+  // Delete (own documents or superadmin)
+  if (entity.userId === currentUserId || userRole === 'superadmin') {
+    actions.push({
+      id: 'delete',
+      type: 'delete',
+      label: 'Delete',
+      variant: 'destructive',
+      requiresConfirmation: true,
+      confirmationMessage: `Are you sure you want to delete "${entity.name}"?`,
+      onClick: () => {
+        // Handle delete
+      },
+    })
+  }
+
+  return actions
 }
 

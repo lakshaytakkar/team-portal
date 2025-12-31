@@ -58,7 +58,9 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
     enabled: open,
   })
 
-  const validateField = (name: string, value: string) => {
+  const validateField = (name: string, value: string | string[]) => {
+    // Skip validation for array fields
+    if (Array.isArray(value)) return ""
     let error = ""
     
     switch (name) {
