@@ -1,6 +1,8 @@
+'use server'
+
 /**
  * Department Report Aggregator Service
- * 
+ *
  * Aggregates individual daily reports into department-level reports
  */
 
@@ -44,7 +46,7 @@ export async function aggregateDepartmentReports(
       throw new Error(`Failed to fetch reports: ${error.message}`)
     }
 
-    const individualReports = (reports || []) as Array<{
+    const individualReports = (reports || []) as unknown as Array<{
       id: string
       user_id: string
       date: string
@@ -268,5 +270,7 @@ export async function getIndividualReportsForDepartmentReport(
     throw error
   }
 }
+
+
 
 

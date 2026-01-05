@@ -31,6 +31,10 @@ export interface Call {
   nextActionDate?: string
   assignedTo: CallUser
   status: CallStatus
+  duration?: number
+  recordingUrl?: string
+  transcription?: string
+  aiSummary?: string
   createdAt: string
   updatedAt: string
 }

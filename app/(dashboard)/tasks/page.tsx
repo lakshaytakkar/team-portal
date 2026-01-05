@@ -122,11 +122,12 @@ interface TaskRowProps {
   expandedRows: ExpandedRows
   onToggleExpand: (taskId: string) => void
   onEdit?: (task: Task) => void
+  onDelete?: (taskId: string) => Promise<void>
   onStatusUpdate?: (taskId: string, status: TaskStatus) => void
   isLast?: boolean
 }
 
-function TaskRow({ task, level, expandedRows, onToggleExpand, onEdit, onStatusUpdate, isLast }: TaskRowProps) {
+function TaskRow({ task, level, expandedRows, onToggleExpand, onEdit, onDelete, onStatusUpdate, isLast }: TaskRowProps) {
   const hasSubtasks =
     (task.level === 0 && (task as TaskLevel0).subtasks && (task as TaskLevel0).subtasks!.length > 0) ||
     (task.level === 1 && (task as TaskLevel1).subtasks && (task as TaskLevel1).subtasks!.length > 0)
@@ -272,7 +273,7 @@ function TaskRow({ task, level, expandedRows, onToggleExpand, onEdit, onStatusUp
               entityName={task.name}
               detailUrl={`/tasks/${task.id}`}
               onEdit={onEdit ? () => onEdit(task) : undefined}
-              onDelete={() => handleDeleteTask(task.id)}
+              onDelete={onDelete ? () => onDelete(task.id) : undefined}
               canView={true}
               canEdit={true}
               canDelete={true}
@@ -1097,6 +1098,7 @@ export default function TasksPage() {
                     expandedRows={expandedRows}
                     onToggleExpand={onToggleExpand}
                     onEdit={handleEditTask}
+                    onDelete={handleDeleteTask}
                     onStatusUpdate={handleStatusUpdate}
                     isLast={index === filteredTasks.length - 1}
                   />

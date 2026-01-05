@@ -11,6 +11,7 @@ export interface UserProfile {
   id: string
   role: 'executive' | 'manager' | 'superadmin'
   department?: string
+  departmentId?: string
   departmentName?: string
   email?: string
   name?: string
@@ -67,6 +68,7 @@ export function useUser(): { user: UserProfile | null; isLoading: boolean } {
           name: profile.full_name || profile.email.split('@')[0],
           role: profile.role as 'executive' | 'manager' | 'superadmin',
           department: dept?.code,
+          departmentId: profile.department_id || undefined,
           departmentName: dept?.name,
           avatar: profile.avatar_url || null,
         })
@@ -106,6 +108,7 @@ export function useUser(): { user: UserProfile | null; isLoading: boolean } {
             name: profile.full_name || profile.email.split('@')[0],
             role: profile.role as 'executive' | 'manager' | 'superadmin',
             department: dept?.code,
+            departmentId: profile.department_id || undefined,
             departmentName: dept?.name,
             avatar: profile.avatar_url || null,
           })

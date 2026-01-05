@@ -107,3 +107,5 @@ COMMENT ON POLICY "hr_update_all_leave_requests" ON leave_requests IS
 'HR department users can approve/reject any pending leave request';
 
 
+
+

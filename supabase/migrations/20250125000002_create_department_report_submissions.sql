@@ -176,3 +176,5 @@ COMMENT ON COLUMN department_report_submissions.days_late IS 'Number of days lat
 COMMENT ON COLUMN department_report_submissions.reminder_sent_count IS 'Number of reminders sent for this submission';
 
 
+
+

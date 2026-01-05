@@ -28,6 +28,7 @@ import {
 } from "lucide-react"
 import { Deal, DealStage } from "@/lib/types/sales"
 import { getDeal, getDeals, updateDeal } from "@/lib/actions/sales"
+import { EditDealDrawer } from "@/components/sales/EditDealDrawer"
 import { ErrorState } from "@/components/ui/error-state"
 import { useDetailNavigation } from "@/lib/hooks/useDetailNavigation"
 import { toast } from "@/components/ui/sonner"

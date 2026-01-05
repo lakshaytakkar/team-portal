@@ -68,7 +68,7 @@ export default function DepartmentReportTrackingPage() {
 
   const { data: departments } = useQuery({
     queryKey: ["departments"],
-    queryFn: getDepartments,
+    queryFn: () => getDepartments(),
     enabled: !userLoading && !!user,
   })
 
@@ -330,5 +330,7 @@ export default function DepartmentReportTrackingPage() {
     </div>
   )
 }
+
+
 
 

@@ -30,6 +30,8 @@ type EntityType =
   | "market-research" | "email-automation" | "application" | "email-template" | "financial-planning"
   | "evaluation" | "job-role" | "interview" | "job-portal" | "onboarding" | "asset" | "organization"
   | "leave-request" | "training" | "client" | "attendance" | "playlist" | "meeting-note" | "personal-document"
+  | "faire-store" | "faire-order" | "faire-product" | "faire-supplier" | "faire-retailer" | "faire-shipment"
+  | "department-report-assignment" | "department-report" | "llc-client"
 
 interface RowActionsMenuProps {
   entityType: EntityType

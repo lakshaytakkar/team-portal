@@ -97,3 +97,5 @@ COMMENT ON COLUMN department_report_assignments.submission_deadline_time IS 'Tim
 COMMENT ON COLUMN department_report_assignments.timezone IS 'Timezone for deadline calculation';
 
 
+
+

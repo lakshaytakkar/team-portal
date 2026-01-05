@@ -1184,6 +1184,48 @@ function getEmployeesTopbarActions(context: TopbarActionContext) {
   return { primary, secondary }
 }
 
+function getTrainingTopbarActions(context: TopbarActionContext) {
+  const primary: Action[] = []
+  const secondary: Action[] = []
+
+  primary.push({
+    id: 'enroll-training',
+    type: 'create',
+    label: 'Enroll in Training',
+    onClick: () => {},
+  })
+
+  return { primary, secondary }
+}
+
+function getMeetingNotesTopbarActions(context: TopbarActionContext) {
+  const primary: Action[] = []
+  const secondary: Action[] = []
+
+  primary.push({
+    id: 'new-meeting-note',
+    type: 'create',
+    label: 'New Meeting Note',
+    onClick: () => {},
+  })
+
+  return { primary, secondary }
+}
+
+function getDocumentsTopbarActions(context: TopbarActionContext) {
+  const primary: Action[] = []
+  const secondary: Action[] = []
+
+  primary.push({
+    id: 'upload-document',
+    type: 'create',
+    label: 'Upload Document',
+    onClick: () => {},
+  })
+
+  return { primary, secondary }
+}
+
 function getTrainingRowActions(context: RowActionContext): Action[] {
   const { entity, userRole, currentUserId } = context
   const actions: Action[] = []

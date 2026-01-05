@@ -49,21 +49,26 @@ function transformClient(row: Record<string, unknown>): LLCClient {
   const client = snakeToCamel(row) as unknown as LLCClient
 
   // Transform nested assignee
-  if (row.assigned_to && typeof row.assigned_to === 'object') {
+  if (row.assigned_to && typeof row.assigned_to === 'object' && row.assigned_to !== null) {
     const assignee = row.assigned_to as Record<string, unknown>
     const profile = assignee.profile as Record<string, unknown> | undefined
-    client.assignedTo = {
-      id: assignee.id as string,
-      employeeId: assignee.employee_id as string,
-      fullName: profile?.full_name as string || 'Unknown',
-      email: profile?.email as string,
-      avatar: profile?.avatar_url as string || getAvatarForUser(profile?.full_name as string || 'U'),
+    if (assignee.id) {
+      client.assignedTo = {
+        id: assignee.id as string,
+        employeeId: assignee.employee_id as string,
+        fullName: profile?.full_name as string || 'Unknown',
+        email: profile?.email as string,
+        avatar: profile?.avatar_url as string || getAvatarForUser(profile?.full_name as string || 'U'),
+      }
     }
   }
 
   // Transform nested bank
-  if (row.bank && typeof row.bank === 'object') {
-    client.bank = snakeToCamel(row.bank as Record<string, unknown>) as unknown as LLCBank
+  if (row.bank && typeof row.bank === 'object' && row.bank !== null) {
+    const bankData = row.bank as Record<string, unknown>
+    if (bankData.id) {
+      client.bank = snakeToCamel(bankData) as unknown as LLCBank
+    }
   }
 
   return client
@@ -107,8 +112,16 @@ export async function getLLCBanks(): Promise<LLCBank[]> {
     .eq('is_active', true)
     .order('display_order', { ascending: true })
 
-  if (error) throw new Error(error.message)
-  return (data ?? []).map((row) => snakeToCamel(row) as unknown as LLCBank)
+  if (error) {
+    console.error('Error fetching LLC banks:', error)
+    throw new Error(error.message)
+  }
+  
+  if (!data) {
+    return []
+  }
+  
+  return data.map((row) => snakeToCamel(row) as unknown as LLCBank)
 }
 
 export async function getLLCDocumentTypes(category?: LLCDocumentCategory): Promise<LLCDocumentType[]> {
@@ -126,8 +139,16 @@ export async function getLLCDocumentTypes(category?: LLCDocumentCategory): Promi
 
   const { data, error } = await query
 
-  if (error) throw new Error(error.message)
-  return (data ?? []).map((row) => snakeToCamel(row) as unknown as LLCDocumentType)
+  if (error) {
+    console.error('Error fetching LLC document types:', error)
+    throw new Error(error.message)
+  }
+  
+  if (!data) {
+    return []
+  }
+  
+  return data.map((row) => snakeToCamel(row) as unknown as LLCDocumentType)
 }
 
 // ============================================================================
@@ -205,8 +226,16 @@ export async function getLLCClients(filters?: LLCClientFilters): Promise<LLCClie
 
   const { data, error } = await query
 
-  if (error) throw new Error(error.message)
-  return (data ?? []).map(transformClient)
+  if (error) {
+    console.error('Error fetching LLC clients:', error)
+    throw new Error(error.message)
+  }
+  
+  if (!data) {
+    return []
+  }
+  
+  return data.map(transformClient)
 }
 
 export async function getLLCClientById(id: string): Promise<LLCClient | null> {
@@ -234,10 +263,15 @@ export async function getLLCClientById(id: string): Promise<LLCClient | null> {
 
   if (error) {
     if (error.code === 'PGRST116') return null
+    console.error('Error fetching LLC client by ID:', error)
     throw new Error(error.message)
   }
 
-  return data ? transformClient(data) : null
+  if (!data) {
+    return null
+  }
+
+  return transformClient(data)
 }
 
 export async function getLLCClientByCode(clientCode: string): Promise<LLCClient | null> {
@@ -265,10 +299,15 @@ export async function getLLCClientByCode(clientCode: string): Promise<LLCClient 
 
   if (error) {
     if (error.code === 'PGRST116') return null
+    console.error('Error fetching LLC client by code:', error)
     throw new Error(error.message)
   }
 
-  return data ? transformClient(data) : null
+  if (!data) {
+    return null
+  }
+
+  return transformClient(data)
 }
 
 export async function createLLCClient(input: CreateLLCClientInput): Promise<LLCClient> {
@@ -318,10 +357,26 @@ export async function createLLCClient(input: CreateLLCClientInput): Promise<LLCC
   const { data, error } = await supabase
     .from('llc_clients')
     .insert(insertData)
-    .select()
+    .select(`
+      *,
+      bank:llc_banks(*),
+      assigned_to:employees(
+        id,
+        employee_id,
+        profile:profiles(
+          id,
+          full_name,
+          email,
+          avatar_url
+        )
+      )
+    `)
     .single()
 
-  if (error) throw new Error(error.message)
+  if (error) {
+    console.error('Error creating LLC client:', error)
+    throw new Error(error.message)
+  }
 
   revalidatePath('/legal-nations')
   return transformClient(data)
@@ -340,7 +395,20 @@ export async function updateLLCClient(id: string, input: UpdateLLCClientInput): 
     .from('llc_clients')
     .update(updateData)
     .eq('id', id)
-    .select()
+    .select(`
+      *,
+      bank:llc_banks(*),
+      assigned_to:employees(
+        id,
+        employee_id,
+        profile:profiles(
+          id,
+          full_name,
+          email,
+          avatar_url
+        )
+      )
+    `)
     .single()
 
   if (error) throw new Error(error.message)
@@ -362,7 +430,10 @@ export async function deleteLLCClient(id: string): Promise<void> {
     })
     .eq('id', id)
 
-  if (error) throw new Error(error.message)
+  if (error) {
+    console.error('Error deleting LLC client:', error)
+    throw new Error(error.message)
+  }
 
   revalidatePath('/legal-nations')
 }
@@ -415,8 +486,16 @@ export async function getLLCClientDocuments(filters: LLCDocumentFilters): Promis
 
   const { data, error } = await query
 
-  if (error) throw new Error(error.message)
-  return (data ?? []).map(transformDocument)
+  if (error) {
+    console.error('Error fetching LLC client documents:', error)
+    throw new Error(error.message)
+  }
+  
+  if (!data) {
+    return []
+  }
+  
+  return data.map(transformDocument)
 }
 
 export async function createLLCClientDocument(input: {
@@ -458,7 +537,10 @@ export async function createLLCClientDocument(input: {
     `)
     .single()
 
-  if (error) throw new Error(error.message)
+  if (error) {
+    console.error('Error creating LLC client document:', error)
+    throw new Error(error.message)
+  }
 
   // Add timeline entry
   await addLLCClientTimelineEntry({
@@ -513,7 +595,10 @@ export async function updateLLCClientDocument(
     `)
     .single()
 
-  if (error) throw new Error(error.message)
+  if (error) {
+    console.error('Error updating LLC client document:', error)
+    throw new Error(error.message)
+  }
 
   revalidatePath('/legal-nations')
   return transformDocument(data)
@@ -531,7 +616,10 @@ export async function deleteLLCClientDocument(id: string): Promise<void> {
     })
     .eq('id', id)
 
-  if (error) throw new Error(error.message)
+  if (error) {
+    console.error('Error deleting LLC client document:', error)
+    throw new Error(error.message)
+  }
 
   revalidatePath('/legal-nations')
 }
@@ -556,8 +644,16 @@ export async function getLLCClientTimeline(clientId: string): Promise<LLCClientT
     .eq('client_id', clientId)
     .order('created_at', { ascending: false })
 
-  if (error) throw new Error(error.message)
-  return (data ?? []).map(transformTimelineEntry)
+  if (error) {
+    console.error('Error fetching LLC client timeline:', error)
+    throw new Error(error.message)
+  }
+  
+  if (!data) {
+    return []
+  }
+  
+  return data.map(transformTimelineEntry)
 }
 
 export async function addLLCClientTimelineEntry(input: AddTimelineEntryInput): Promise<LLCClientTimelineEntry> {
@@ -576,10 +672,20 @@ export async function addLLCClientTimelineEntry(input: AddTimelineEntryInput): P
   const { data, error } = await supabase
     .from('llc_client_timeline')
     .insert(insertData)
-    .select()
+    .select(`
+      *,
+      performed_by_profile:profiles(
+        id,
+        full_name,
+        avatar_url
+      )
+    `)
     .single()
 
-  if (error) throw new Error(error.message)
+  if (error) {
+    console.error('Error adding LLC client timeline entry:', error)
+    throw new Error(error.message)
+  }
 
   revalidatePath(`/legal-nations/clients/${input.clientId}`)
   return transformTimelineEntry(data)
@@ -603,7 +709,10 @@ export async function getLLCClientStats(assignedToId?: string): Promise<LLCClien
 
   const { data, error } = await query
 
-  if (error) throw new Error(error.message)
+  if (error) {
+    console.error('Error fetching LLC client stats:', error)
+    throw new Error(error.message)
+  }
 
   const clients = data ?? []
   const now = new Date()

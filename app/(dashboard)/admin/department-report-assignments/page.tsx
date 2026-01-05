@@ -55,13 +55,13 @@ export default function DepartmentReportAssignmentsPage() {
 
   const { data: departments } = useQuery({
     queryKey: ["departments"],
-    queryFn: getDepartments,
+    queryFn: () => getDepartments(),
     enabled: !userLoading && !!user,
   })
 
   const { data: categories } = useQuery({
     queryKey: ["daily-report-categories"],
-    queryFn: getDailyReportCategories,
+    queryFn: () => getDailyReportCategories(),
     enabled: !userLoading && !!user,
   })
 
@@ -294,5 +294,7 @@ export default function DepartmentReportAssignmentsPage() {
     </div>
   )
 }
+
+
 
 

@@ -677,11 +677,11 @@ export async function createDepartmentReport(
     const deadline = await calculateDeadline(input.reportDate, departmentId, categoryId || undefined)
 
     // If report type is aggregated or hybrid, aggregate the data
-    let summaryData = input.summaryData || {}
+    let summaryData: Record<string, unknown> = input.summaryData || {}
     if (input.reportType === 'aggregated' || input.reportType === 'hybrid') {
       try {
         const aggregatedData = await aggregateDepartmentReports(input.reportDate, departmentId)
-        summaryData = aggregatedData
+        summaryData = aggregatedData as unknown as Record<string, unknown>
       } catch (error) {
         console.error('Error aggregating reports:', error)
         // Continue with empty summary data

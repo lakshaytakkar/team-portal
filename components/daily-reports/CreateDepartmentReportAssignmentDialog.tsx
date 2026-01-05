@@ -63,19 +63,19 @@ export function CreateDepartmentReportAssignmentDialog({
   // Fetch departments, categories, and users
   const { data: departments } = useQuery({
     queryKey: ["departments"],
-    queryFn: getDepartments,
+    queryFn: () => getDepartments(),
     enabled: open,
   })
 
   const { data: categories } = useQuery({
     queryKey: ["daily-report-categories"],
-    queryFn: getDailyReportCategories,
+    queryFn: () => getDailyReportCategories(),
     enabled: open,
   })
 
   const { data: assignableUsers } = useQuery({
     queryKey: ["assignable-users"],
-    queryFn: getAssignableUsers,
+    queryFn: () => getAssignableUsers(),
     enabled: open,
   })
 
@@ -391,5 +391,7 @@ export function CreateDepartmentReportAssignmentDialog({
     </Dialog>
   )
 }
+
+
 
 

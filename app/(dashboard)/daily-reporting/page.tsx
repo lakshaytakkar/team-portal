@@ -136,7 +136,7 @@ export default function DailyReportingPage() {
   // Fetch categories, departments, and employees for filters
   const { data: categories } = useQuery({
     queryKey: ["daily-report-categories"],
-    queryFn: getDailyReportCategories,
+    queryFn: () => getDailyReportCategories(),
     enabled: isSuperAdmin,
   })
 
@@ -284,7 +284,7 @@ export default function DailyReportingPage() {
 
   // Group reports by date with latest first
   const groupedReports = useMemo(() => {
-    if (!reports || reports.length === 0) return new Map()
+    if (!reports || reports.length === 0) return new Map<string, DailyReport[]>()
 
     const grouped = new Map<string, DailyReport[]>()
     
@@ -740,12 +740,12 @@ function DepartmentReportsTab() {
   // Fetch categories and departments for filters
   const { data: categories } = useQuery({
     queryKey: ["daily-report-categories"],
-    queryFn: getDailyReportCategories,
+    queryFn: () => getDailyReportCategories(),
   })
 
   const { data: departments } = useQuery({
     queryKey: ["departments"],
-    queryFn: getDepartments,
+    queryFn: () => getDepartments(),
   })
 
   // Build filters
@@ -807,7 +807,7 @@ function DepartmentReportsTab() {
 
   // Group reports by date with latest first
   const groupedReports = useMemo(() => {
-    if (!reports || reports.length === 0) return new Map()
+    if (!reports || reports.length === 0) return new Map<string, DepartmentReport[]>()
 
     const grouped = new Map<string, DepartmentReport[]>()
     

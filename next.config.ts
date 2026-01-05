@@ -13,6 +13,11 @@ const nextConfig: NextConfig = {
         hostname: 'via.placeholder.com',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'cdn.faire.com',
+        pathname: '/**',
+      },
     ],
   },
 };

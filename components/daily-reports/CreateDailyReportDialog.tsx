@@ -43,7 +43,7 @@ export function CreateDailyReportDialog({ open, onOpenChange }: CreateDailyRepor
   // Fetch categories
   const { data: categories = [] } = useQuery({
     queryKey: ["daily-report-categories"],
-    queryFn: getDailyReportCategories,
+    queryFn: () => getDailyReportCategories(),
     enabled: open,
   })
 

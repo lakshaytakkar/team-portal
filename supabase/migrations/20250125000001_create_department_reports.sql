@@ -169,3 +169,5 @@ COMMENT ON COLUMN department_reports.deadline IS 'Calculated deadline (report_da
 COMMENT ON COLUMN department_reports.is_late IS 'Automatically calculated based on submission time vs deadline';
 
 
+
+

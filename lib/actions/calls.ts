@@ -117,6 +117,10 @@ function transformCall(row: any, profile: any): Call {
     nextActionDate: row.next_action_date || undefined,
     assignedTo,
     status: row.status as CallStatus,
+    duration: row.duration || undefined,
+    recordingUrl: row.recording_url || undefined,
+    transcription: row.transcription || undefined,
+    aiSummary: row.ai_summary || undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }

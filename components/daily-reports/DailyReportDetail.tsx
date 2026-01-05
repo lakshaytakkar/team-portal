@@ -175,9 +175,11 @@ export function DailyReportDetail({
                   </p>
                   <p className="text-sm font-medium">
                     {fv.fieldType === 'array' && Array.isArray(fv.fieldValue)
-                      ? fv.fieldValue.join(', ')
+                      ? (fv.fieldValue as string[]).join(', ')
                       : fv.fieldType === 'number'
-                      ? fv.fieldValue
+                      ? String(fv.fieldValue)
+                      : typeof fv.fieldValue === 'object'
+                      ? JSON.stringify(fv.fieldValue)
                       : String(fv.fieldValue || '-')}
                   </p>
                 </div>

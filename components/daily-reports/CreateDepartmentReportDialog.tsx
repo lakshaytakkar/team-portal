@@ -78,13 +78,13 @@ export function CreateDepartmentReportDialog({
   // Fetch departments and categories
   const { data: departments } = useQuery({
     queryKey: ["departments"],
-    queryFn: getDepartments,
+    queryFn: () => getDepartments(),
     enabled: open,
   })
 
   const { data: categories } = useQuery({
     queryKey: ["daily-report-categories"],
-    queryFn: getDailyReportCategories,
+    queryFn: () => getDailyReportCategories(),
     enabled: open,
   })
 
@@ -359,5 +359,7 @@ export function CreateDepartmentReportDialog({
     </Dialog>
   )
 }
+
+
 
 

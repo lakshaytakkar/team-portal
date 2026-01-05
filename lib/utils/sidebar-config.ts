@@ -72,6 +72,9 @@ import {
   Landmark,
   FileSignature,
   CreditCard,
+  ShoppingCart,
+  Truck,
+  PackageCheck,
 } from "lucide-react"
 
 /**
@@ -934,6 +937,59 @@ export function buildSidebarConfig(
         description: "Track US bank account applications",
       }
     )
+
+    // FAIRE WHOLESALE - E-commerce Wholesale Management (USA)
+    items.push(
+      {
+        label: "Dashboard",
+        href: "/faire-wholesale",
+        icon: LayoutDashboard,
+        section: "faire-wholesale",
+        description: "Faire wholesale overview and KPIs",
+      },
+      {
+        label: "Faire Stores",
+        href: "/faire-wholesale/stores",
+        icon: Store,
+        section: "faire-wholesale",
+        description: "Manage Faire seller accounts",
+      },
+      {
+        label: "Orders",
+        href: "/faire-wholesale/orders",
+        icon: ShoppingCart,
+        section: "faire-wholesale",
+        description: "View and manage wholesale orders",
+      },
+      {
+        label: "Retailers",
+        href: "/faire-wholesale/retailers",
+        icon: Users,
+        section: "faire-wholesale",
+        description: "View retailers and customers",
+      },
+      {
+        label: "Products",
+        href: "/faire-wholesale/products",
+        icon: Package,
+        section: "faire-wholesale",
+        description: "Manage product catalog",
+      },
+      {
+        label: "Suppliers",
+        href: "/faire-wholesale/suppliers",
+        icon: Truck,
+        section: "faire-wholesale",
+        description: "Manage USA suppliers",
+      },
+      {
+        label: "Shipments",
+        href: "/faire-wholesale/shipments",
+        icon: PackageCheck,
+        section: "faire-wholesale",
+        description: "Track order shipments",
+      }
+    )
   }
 
   // LEGAL NATIONS - For non-superadmin users (their assigned clients)
@@ -1043,6 +1099,7 @@ export function getSectionLabel(section: string): string {
     research: "Research",
     development: "Development",
     "legal-nations": "Legal Nations",
+    "faire-wholesale": "Faire Wholesale",
     admin: "Admin",
     team: "Resources",
   }
@@ -1068,6 +1125,7 @@ export function getSectionOrder(): string[] {
     "research",
     "development",
     "legal-nations",
+    "faire-wholesale",
     "admin",
     "team",
   ]
