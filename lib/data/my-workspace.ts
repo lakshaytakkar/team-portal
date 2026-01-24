@@ -1,0 +1,233 @@
+import {
+  Training,
+  PersonalDocument,
+  PersonalNote,
+  MeetingNote,
+  Goal,
+  LeaveRequest,
+  DailyReport,
+  KnowledgeBaseArticle,
+} from "@/lib/types/my-workspace"
+
+export const initialTrainings: Training[] = [
+  {
+    id: "train-1",
+    title: "New Employee Onboarding",
+    description: "Essential orientation covering company culture, policies, benefits, and your role within the organization",
+    category: "Onboarding",
+    status: "in-progress",
+    progress: 65,
+    duration: 90,
+    url: "https://youtu.be/BaDGqm4rEzY?si=SQAg0ut5lYYB76H7",
+    createdAt: "2024-01-15T00:00:00Z",
+    updatedAt: "2024-01-20T00:00:00Z",
+  },
+  {
+    id: "train-2",
+    title: "Workplace Safety & Emergency Procedures",
+    description: "Learn essential safety protocols, emergency evacuation procedures, and how to report workplace hazards",
+    category: "Safety",
+    status: "completed",
+    progress: 100,
+    duration: 60,
+    url: "/training/workplace-safety",
+    completedAt: "2024-01-10T00:00:00Z",
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-10T00:00:00Z",
+  },
+  {
+    id: "train-3",
+    title: "Code of Conduct & Ethics",
+    description: "Understanding our company values, ethical guidelines, professional behavior standards, and reporting procedures",
+    category: "Compliance",
+    status: "not-started",
+    progress: 0,
+    duration: 45,
+    url: "/training/code-of-conduct",
+    createdAt: "2024-01-18T00:00:00Z",
+    updatedAt: "2024-01-18T00:00:00Z",
+  },
+  {
+    id: "train-4",
+    title: "Data Security & Privacy Training",
+    description: "Protecting sensitive information, recognizing phishing attempts, password security, and data handling best practices",
+    category: "Compliance",
+    status: "in-progress",
+    progress: 40,
+    duration: 75,
+    url: "/training/data-security",
+    createdAt: "2024-01-12T00:00:00Z",
+    updatedAt: "2024-01-19T00:00:00Z",
+  },
+  {
+    id: "train-5",
+    title: "Diversity, Equity & Inclusion",
+    description: "Building an inclusive workplace, understanding unconscious bias, and fostering a culture of respect and belonging",
+    category: "Professional Development",
+    status: "in-progress",
+    progress: 55,
+    duration: 90,
+    url: "/training/diversity-inclusion",
+    createdAt: "2024-01-08T00:00:00Z",
+    updatedAt: "2024-01-17T00:00:00Z",
+  },
+  {
+    id: "train-6",
+    title: "Time Management & Productivity",
+    description: "Effective strategies for managing your workload, prioritizing tasks, and maintaining work-life balance",
+    category: "Professional Development",
+    status: "not-started",
+    progress: 0,
+    duration: 60,
+    url: "/training/time-management",
+    createdAt: "2024-01-16T00:00:00Z",
+    updatedAt: "2024-01-16T00:00:00Z",
+  },
+  {
+    id: "train-7",
+    title: "Conflict Resolution & Communication",
+    description: "Developing skills to handle workplace conflicts constructively and communicate effectively with colleagues",
+    category: "Professional Development",
+    status: "completed",
+    progress: 100,
+    duration: 80,
+    url: "/training/conflict-resolution",
+    completedAt: "2024-01-05T00:00:00Z",
+    createdAt: "2023-12-20T00:00:00Z",
+    updatedAt: "2024-01-05T00:00:00Z",
+  },
+  {
+    id: "train-8",
+    title: "Performance Management & Goal Setting",
+    description: "Understanding performance reviews, setting SMART goals, and creating your professional development plan",
+    category: "Professional Development",
+    status: "in-progress",
+    progress: 30,
+    duration: 70,
+    url: "/training/performance-management",
+    createdAt: "2024-01-14T00:00:00Z",
+    updatedAt: "2024-01-18T00:00:00Z",
+  },
+  {
+    id: "train-9",
+    title: "Workplace Health & Wellness",
+    description: "Ergonomics, mental health resources, stress management, and maintaining a healthy work environment",
+    category: "Wellness",
+    status: "not-started",
+    progress: 0,
+    duration: 50,
+    url: "/training/health-wellness",
+    createdAt: "2024-01-17T00:00:00Z",
+    updatedAt: "2024-01-17T00:00:00Z",
+  },
+  {
+    id: "train-10",
+    title: "Harassment Prevention Training",
+    description: "Recognizing and preventing workplace harassment, understanding your rights, and reporting procedures",
+    category: "Compliance",
+    status: "not-started",
+    progress: 0,
+    duration: 90,
+    url: "/training/harassment-prevention",
+    createdAt: "2024-01-19T00:00:00Z",
+    updatedAt: "2024-01-19T00:00:00Z",
+  },
+]
+
+export const initialPersonalDocuments: PersonalDocument[] = [
+  {
+    id: "doc-1",
+    name: "Resume_2024.pdf",
+    type: "pdf",
+    size: 245000,
+    url: "/documents/resume-2024.pdf",
+    uploadedAt: "2024-01-15T00:00:00Z",
+    createdAt: "2024-01-15T00:00:00Z",
+    updatedAt: "2024-01-15T00:00:00Z",
+  },
+]
+
+export const initialPersonalNotes: PersonalNote[] = [
+  {
+    id: "note-1",
+    title: "Project Ideas",
+    content: "List of ideas for new projects...",
+    type: "personal",
+    tags: ["ideas", "projects"],
+    createdAt: "2024-01-10T00:00:00Z",
+    updatedAt: "2024-01-15T00:00:00Z",
+  },
+]
+
+export const initialMeetingNotes: MeetingNote[] = [
+  {
+    id: "mnote-1",
+    title: "Team Standup - Jan 20",
+    content: "Discussion about sprint progress...",
+    meetingDate: "2024-01-20",
+    attendees: ["Sarah", "Mike", "Alex"],
+    tags: ["standup", "sprint"],
+    createdAt: "2024-01-20T00:00:00Z",
+    updatedAt: "2024-01-20T00:00:00Z",
+  },
+]
+
+export const initialGoals: Goal[] = [
+  {
+    id: "goal-1",
+    title: "Complete React Certification",
+    description: "Finish the advanced React course",
+    status: "in-progress",
+    progress: 60,
+    targetDate: "2024-03-31",
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-20T00:00:00Z",
+  },
+]
+
+export const initialLeaveRequests: LeaveRequest[] = [
+  {
+    id: "leave-1",
+    type: "vacation",
+    startDate: "2024-02-15",
+    endDate: "2024-02-20",
+    days: 5,
+    status: "pending",
+    reason: "Family vacation",
+    createdAt: "2024-01-15T00:00:00Z",
+    updatedAt: "2024-01-15T00:00:00Z",
+  },
+]
+
+export const initialDailyReports: DailyReport[] = [
+  {
+    id: "report-1",
+    date: "2024-01-20",
+    tasksCompleted: ["Implemented user authentication", "Fixed bug in dashboard"],
+    tasksPlanned: ["Code review", "Write documentation"],
+    blockers: [],
+    notes: "Good progress today",
+    status: "submitted",
+    createdAt: "2024-01-20T17:00:00Z",
+    updatedAt: "2024-01-20T17:00:00Z",
+  },
+]
+
+export const initialKnowledgeBaseArticles: KnowledgeBaseArticle[] = [
+  {
+    id: "kb-1",
+    title: "Getting Started Guide",
+    content: "Welcome to the platform...",
+    category: "Onboarding",
+    tags: ["getting-started", "onboarding"],
+    views: 250,
+    createdBy: {
+      id: "user-2",
+      name: "Sarah Johnson",
+      email: "sarah@example.com",
+    },
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-10T00:00:00Z",
+  },
+]
+

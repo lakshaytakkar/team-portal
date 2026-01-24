@@ -1,0 +1,126 @@
+# Cursor Rules for HR Portal
+
+## Foreign Key Handling
+
+### CRITICAL: Always Resolve Foreign Keys
+
+When creating or updating records that reference other tables via foreign keys:
+
+1. **NEVER pass string values directly to foreign key fields**
+   - Forms often send department names ("design", "engineering") or manager names/emails
+   - These must be resolved to UUIDs before database operations
+   - Use `resolveDepartmentId()` and `resolveProfileId()` from `lib/utils/foreign-keys.ts`
+
+2. **Always normalize optional fields**
+   - Convert empty strings to `undefined` using `normalizeOptional()`
+   - Empty strings cause database constraint violations
+   - Example: `const phone = normalizeOptional(input.phone)`
+
+3. **Validate required fields before database operations**
+   - Check required fields exist before attempting inserts/updates
+   - Provide clear error messages for missing required fields
+
+4. **Use proper error handling**
+   - Wrap all database operations in try-catch blocks
+   - Use `logDatabaseError()` for debugging
+   - Use `getUserFriendlyErrorMessage()` for user-facing errors
+   - Import from `lib/utils/errors.ts`
+
+### Example Pattern
+
+```typescript
+export async function createRecord(input: CreateInput) {
+  if (!db) throw new Error('Database not connected')
+  
+  try {
+    // 1. Normalize optional fields
+    const optionalField = normalizeOptional(input.optionalField)
+    
+    // 2. Resolve foreign keys
+    const departmentId = await resolveDepartmentId(input.departmentId, false)
+    const managerId = await resolveProfileId(input.managerId, false)
+    
+    // 3. Validate required fields
+    if (!input.requiredField) {
+      throw new Error('Required field is missing')
+    }
+    
+    // 4. Database operation
+    const [newRecord] = await db
+      .insert(table)
+      .values({
+        requiredField: input.requiredField,
+        optionalField,
+        departmentId, // UUID or null
+        managerId, // UUID or null
+      })
+      .returning()
+    
+    return newRecord
+  } catch (error) {
+    logDatabaseError(error, 'createRecord')
+    const friendlyMessage = getUserFriendlyErrorMessage(error)
+    throw new Error(friendlyMessage)
+  }
+}
+```
+
+## Form Data Handling
+
+### Fetch Real Data for Dropdowns
+
+1. **Always fetch actual data from database for dropdowns**
+   - Don't hardcode department names or manager names
+   - Use server actions to fetch departments/managers
+   - Example: `getDepartments()`, `getManagers()` from `lib/actions/hr.ts`
+
+2. **Send UUIDs from forms, not names**
+   - Form selects should use UUID as value
+   - Display name as label
+   - Example: `<SelectItem value={dept.id}>{dept.name}</SelectItem>`
+
+3. **Handle empty values correctly**
+   - Send `undefined` not empty string for optional fields
+   - Example: `departmentId: formData.departmentId || undefined`
+
+## Database Operations
+
+### Transactions
+
+- Use database transactions for multi-table operations
+- Ensures atomicity (all succeed or all fail)
+- Example: Creating profile + employee in same transaction
+
+### Error Messages
+
+- Always provide user-friendly error messages
+- Log detailed errors for debugging
+- Never expose internal database errors to users
+
+## Code Organization
+
+### Utility Functions
+
+- Foreign key resolution: `lib/utils/foreign-keys.ts`
+- Error handling: `lib/utils/errors.ts`
+- Server actions: `lib/actions/*.ts`
+
+### Import Pattern
+
+```typescript
+import { resolveDepartmentId, resolveProfileId, normalizeOptional } from '@/lib/utils/foreign-keys'
+import { getUserFriendlyErrorMessage, logDatabaseError } from '@/lib/utils/errors'
+```
+
+## Testing Considerations
+
+When testing create/update operations:
+
+- Test with valid department names/codes → should resolve to UUIDs
+- Test with invalid department names → should error gracefully
+- Test with valid manager IDs/emails → should resolve to UUIDs
+- Test with invalid manager identifiers → should error gracefully
+- Test with empty optional fields → should convert to undefined
+- Test with missing required fields → should provide clear error
+
+

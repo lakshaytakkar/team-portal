@@ -1,0 +1,524 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter);
+  --font-heading: var(--font-inter-tight);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  /* Status colors */
+  --color-status-not-started: var(--status-not-started);
+  --color-status-not-started-foreground: var(--status-not-started-foreground);
+  --color-status-in-progress: var(--status-in-progress);
+  --color-status-in-progress-foreground: var(--status-in-progress-foreground);
+  --color-status-completed: var(--status-completed);
+  --color-status-completed-foreground: var(--status-completed-foreground);
+  --color-status-on-hold: var(--status-on-hold);
+  --color-status-on-hold-foreground: var(--status-on-hold-foreground);
+  /* Priority colors */
+  --color-priority-high: var(--priority-high);
+  --color-priority-high-foreground: var(--priority-high-foreground);
+  --color-priority-medium: var(--priority-medium);
+  --color-priority-medium-foreground: var(--priority-medium-foreground);
+  --color-priority-low: var(--priority-low);
+  --color-priority-low-foreground: var(--priority-low-foreground);
+}
+
+:root {
+  /* Radius - matching design system (8px base) */
+  --radius: 0.5rem;
+  
+  /* Base colors - Light Theme (Refined) */
+  --background: #F9FAFB;
+  --foreground: #08090A;
+  
+  /* Card colors */
+  --card: #FFFFFF;
+  --card-foreground: #08090A;
+  
+  /* Popover colors */
+  --popover: #FFFFFF;
+  --popover-foreground: #08090A;
+  
+  /* Primary colors (Shared) */
+  --primary: #1e3a8a;
+  --primary-foreground: #FFFFFF;
+  
+  /* Secondary colors */
+  --secondary: #F1F5F9;
+  --secondary-foreground: #08090A;
+  
+  /* Muted colors */
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B;
+  
+  /* Accent colors */
+  --accent: #F1F5F9;
+  --accent-foreground: #08090A;
+  
+  /* Destructive colors */
+  --destructive: #EF4444;
+  --destructive-foreground: #FFFFFF;
+  
+  /* Border and input */
+  --border: #E2E8F0;
+  --input: #E2E8F0;
+  --ring: #1e3a8a;
+  
+  /* Sidebar colors */
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #08090A;
+  --sidebar-primary: #1e3a8a;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #F1F5F9;
+  --sidebar-accent-foreground: #08090A;
+  --sidebar-border: #E2E8F0;
+  --sidebar-ring: #1e40af;
+
+  /* Status colors */
+  --status-not-started: #ECEFF3;
+  --status-not-started-foreground: #666D80;
+  --status-in-progress: #F0FBFF;
+  --status-in-progress-foreground: #33CFFF;
+  --status-completed: #EFFEFA;
+  --status-completed-foreground: #40C4AA;
+  --status-on-hold: #FFF6E0;
+  --status-on-hold-foreground: #FFBD4C;
+
+  /* Priority colors */
+  --priority-high: #FCE8EC;
+  --priority-high-foreground: #B21634;
+  --priority-medium: #FFF9ED;
+  --priority-medium-foreground: #A77B2E;
+  --priority-low: #ECF9F7;
+  --priority-low-foreground: #267666;
+
+  /* Chart colors */
+  --chart-1: #1e3a8a;
+  --chart-2: #40C4AA;
+  --chart-3: #FFBD4C;
+  --chart-4: #33CFFF;
+  --chart-5: #B21634;
+}
+
+.dark {
+  --background: #08090A;
+  --foreground: #F7F8F8;
+  --card: #0C0D0E;
+  --card-foreground: #F7F8F8;
+  --popover: #0C0D0E;
+  --popover-foreground: #F7F8F8;
+  --primary: #1e3a8a;
+  --primary-foreground: #FFFFFF;
+  --secondary: #161718;
+  --secondary-foreground: #F7F8F8;
+  --muted: #161718;
+  --muted-foreground: #A1A7C1;
+  --accent: #161718;
+  --accent-foreground: #F7F8F8;
+  --destructive: #EF4444;
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.1);
+  --ring: #1e3a8a;
+  
+  --sidebar: #08090A;
+  --sidebar-foreground: #F7F8F8;
+  --sidebar-primary: #1e3a8a;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #161718;
+  --sidebar-accent-foreground: #F7F8F8;
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --sidebar-ring: #1e40af;
+
+  /* Status colors - darker backgrounds for dark mode */
+  --status-not-started: #1E2024;
+  --status-not-started-foreground: #9CA3AF;
+  --status-in-progress: #0C2A33;
+  --status-in-progress-foreground: #33CFFF;
+  --status-completed: #0C2922;
+  --status-completed-foreground: #40C4AA;
+  --status-on-hold: #2A2210;
+  --status-on-hold-foreground: #FFBD4C;
+
+  /* Priority colors - darker backgrounds for dark mode */
+  --priority-high: #2A1418;
+  --priority-high-foreground: #F87171;
+  --priority-medium: #2A2010;
+  --priority-medium-foreground: #FBBF24;
+  --priority-low: #0C2922;
+  --priority-low-foreground: #34D399;
+
+  /* Chart colors - same as light mode */
+  --chart-1: #1e3a8a;
+  --chart-2: #40C4AA;
+  --chart-3: #FFBD4C;
+  --chart-4: #33CFFF;
+  --chart-5: #F87171;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    /* Modern Slim Scrollbar - Firefox */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(30, 58, 138, 0.3) transparent;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-size: 17px;
+    line-height: 1.6;
+    letter-spacing: -0.01em;
+  }
+
+  h1 {
+    font-size: 64px;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+  }
+
+  h2 {
+    font-size: 56px;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1.2;
+  }
+
+  /* Cursor baseline: interactive elements should feel clickable */
+  a[href],
+  button,
+  [role="button"],
+  summary,
+  input[type="checkbox"],
+  input[type="radio"],
+  select {
+    cursor: pointer;
+  }
+
+  /* Text editing controls */
+  input:not([type]),
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="url"],
+  textarea {
+    cursor: text;
+  }
+
+  /* Disabled states */
+  button:disabled,
+  input:disabled,
+  select:disabled,
+  textarea:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+
+  /* Modern Slim Scrollbar Styling - Webkit browsers (Chrome, Safari, Edge) */
+
+  *::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 10px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: rgba(30, 58, 138, 0.3);
+    border-radius: 10px;
+    transition: background 0.2s ease;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: rgba(30, 58, 138, 0.5);
+  }
+
+  *::-webkit-scrollbar-thumb:active {
+    background: rgba(30, 58, 138, 0.7);
+  }
+
+  /* Horizontal scrollbars */
+  *::-webkit-scrollbar:horizontal {
+    height: 6px;
+  }
+
+  /* Corner where horizontal and vertical scrollbars meet */
+  *::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+}
+
+/* Sonner Toast Custom Styling */
+[data-sonner-toaster] {
+  --width: 356px;
+  --border-radius: var(--radius);
+  --normal-bg: var(--card);
+  --normal-border: var(--border);
+  --normal-text: var(--card-foreground);
+  --success-bg: var(--status-completed);
+  --success-border: var(--status-completed-foreground);
+  --success-text: var(--status-completed-foreground);
+  --success-icon-dark: #28806F;
+  --success-icon-light: #9EE1D4;
+  --error-bg: var(--destructive);
+  --error-border: var(--destructive);
+  --error-text: var(--destructive-foreground);
+}
+
+[data-sonner-toast] {
+  background: var(--normal-bg) !important;
+  border: 1px solid var(--normal-border) !important;
+  color: var(--normal-text) !important;
+  border-radius: var(--border-radius) !important;
+  padding: 16px !important;
+  box-shadow: 0px 5px 10px -2px rgba(13, 13, 18, 0.04), 0px 4px 8px -1px rgba(13, 13, 18, 0.02) !important;
+  font-family: var(--font-inter) !important;
+}
+
+[data-sonner-toast] [data-title] {
+  font-size: 15px !important;
+  font-weight: 500 !important;
+  line-height: 22px !important;
+  letter-spacing: -0.01em !important;
+  color: var(--foreground) !important;
+}
+
+[data-sonner-toast] [data-description] {
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  line-height: 18px !important;
+  letter-spacing: -0.01em !important;
+  color: var(--muted-foreground) !important;
+  margin-top: 4px !important;
+}
+
+[data-sonner-toast] [data-description] strong {
+  font-weight: 700 !important;
+}
+
+/* Success toast - enhanced styling matching Figma design */
+[data-sonner-toast][data-type="success"] {
+  padding: 20px !important;
+}
+
+[data-sonner-toast][data-type="success"] [data-title] {
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  line-height: 1.3 !important;
+  letter-spacing: 0 !important;
+  color: #0d0d12 !important;
+  font-family: var(--font-heading) !important;
+}
+
+[data-sonner-toast][data-type="success"] [data-description] {
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 1.5 !important;
+  letter-spacing: 0.01em !important;
+  color: #666d80 !important;
+  margin-top: 6px !important;
+}
+
+/* General icon styling for all toast types */
+[data-sonner-toast] [data-icon] {
+  flex-shrink: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Success toast icon styling - layered effect matching Figma */
+[data-sonner-toast][data-type="success"] [data-icon] {
+  position: relative !important;
+  width: 48px !important;
+  height: 48px !important;
+  min-width: 48px !important;
+  min-height: 48px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-right: 12px !important;
+  flex-shrink: 0 !important;
+}
+
+/* Outer circle with gradient border effect */
+[data-sonner-toast][data-type="success"] [data-icon]::before {
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  width: 48px !important;
+  height: 48px !important;
+  border-radius: 48px !important;
+  background: linear-gradient(180deg, rgba(239, 254, 250, 0.48) 0%, rgba(239, 254, 250, 0) 100%) !important;
+  border: 1px solid rgba(239, 254, 250, 1) !important;
+  z-index: 0 !important;
+}
+
+/* Middle circle with white background and light green border */
+[data-sonner-toast][data-type="success"] [data-icon]::after {
+  content: '' !important;
+  position: absolute !important;
+  inset: 6px !important;
+  width: 36px !important;
+  height: 36px !important;
+  background: white !important;
+  border: 1px solid #9ee1d4 !important;
+  border-radius: 36px !important;
+  box-shadow: 0px 2px 4px 0px rgba(221, 243, 239, 0.04) !important;
+  z-index: 1 !important;
+}
+
+/* Inner circle with dark green background - style the SVG container */
+[data-sonner-toast][data-type="success"] [data-icon] > * {
+  position: relative !important;
+  z-index: 2 !important;
+  width: 24px !important;
+  height: 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: #28806F !important;
+  border-radius: 50% !important;
+  padding: 4px !important;
+}
+
+/* Checkmark icon styling */
+[data-sonner-toast][data-type="success"] [data-icon] svg {
+  width: 16px !important;
+  height: 16px !important;
+  color: white !important;
+  stroke-width: 2.5 !important;
+}
+
+[data-sonner-toast][data-type="success"] [data-icon] svg path {
+  stroke: white !important;
+  stroke-width: 2.5 !important;
+  fill: none !important;
+}
+
+/* Error toast icon styling */
+[data-sonner-toast][data-type="error"] [data-icon] {
+  width: 20px !important;
+  height: 20px !important;
+  color: white !important;
+  background: var(--destructive) !important;
+  border-radius: 50% !important;
+}
+
+[data-sonner-toast][data-type="error"] [data-icon] svg {
+  width: 14px !important;
+  height: 14px !important;
+  color: white !important;
+}
+
+/* Close button styling */
+[data-sonner-toast] [data-close-button] {
+  width: 18px !important;
+  height: 18px !important;
+  border-radius: 50% !important;
+  background: var(--muted) !important;
+  border: 1px solid var(--border) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  margin-left: auto !important;
+  transition: background-color 0.2s !important;
+}
+
+[data-sonner-toast] [data-close-button]:hover {
+  background: var(--accent) !important;
+}
+
+[data-sonner-toast] [data-close-button] svg {
+  width: 12px !important;
+  height: 12px !important;
+  color: var(--muted-foreground) !important;
+}
+
+/* Toast content layout */
+[data-sonner-toast] > div {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  width: 100% !important;
+}
+
+[data-sonner-toast] [data-content] {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+  min-width: 0 !important;
+}
+
+@layer utilities {
+  /* Shadow utilities matching Figma design system */
+  .shadow-lumin-xs {
+    box-shadow: 0px 1px 2px 0px rgba(13, 13, 18, 0.06);
+  }
+  
+  .shadow-lumin-sm {
+    box-shadow: 0px 1px 3px 0px rgba(13, 13, 18, 0.05), 0px 1px 2px 0px rgba(13, 13, 18, 0.04);
+  }
+  
+  .shadow-lumin-md {
+    box-shadow: 0px 5px 10px -2px rgba(13, 13, 18, 0.04), 0px 4px 8px -1px rgba(13, 13, 18, 0.02);
+  }
+  
+  .shadow-lumin-lg {
+    box-shadow: 0px 12px 16px -4px rgba(13, 13, 18, 0.08), 0px 4px 6px -2px rgba(13, 13, 18, 0.03);
+  }
+  
+  .shadow-lumin-xl {
+    box-shadow: 0px 24px 48px -12px rgba(13, 13, 18, 0.12);
+  }
+  
+  .shadow-lumin-2xl {
+    box-shadow: 0px 24px 48px -12px rgba(13, 13, 18, 0.18);
+  }
+}
